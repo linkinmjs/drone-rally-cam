@@ -6,6 +6,10 @@ AUD_MUTE,Silenciar todo,Mute all
 AUD_SUBTITLE,Volumen general y por grupo de sonidos,Overall and per group volume
 AUD_TITLE,Audio,Audio
 AUD_UI,Interfaz,Interface
+CAL_AXIS_PITCH,pitch,pitch
+CAL_AXIS_TAKEN,Ese eje ya es el %s: mové otro.,That axis is already the %s: move another one.
+CAL_AXIS_THROTTLE,acelerador,throttle
+CAL_AXIS_YAW,yaw,yaw
 CAL_SAVE_ERROR,No se pudo guardar la calibración en el archivo de configuración.,Could not save the calibration data to the configuration file.
 CAL_STEP_CENTER,Centrá los sticks,Center the sticks
 CAL_STEP_CORNERS,Llevá los sticks a las esquinas,Move the sticks to the corners
@@ -67,7 +71,9 @@ ERR_SETTINGS_PARSE,No se pudo leer el archivo de ajustes. Se cargan los valores 
 GAME_SECTION_INTERFACE,INTERFAZ,INTERFACE
 GAME_STICK_NAVIGATION,Navegación con sticks,Stick navigation
 GAME_STICK_NAVIGATION_BETAFLIGHT,Estilo Betaflight,Betaflight style
+GAME_STICK_NAVIGATION_GAMEPAD,Mando (recomendado),Gamepad (recommended)
 GAME_STICK_NAVIGATION_HELP_BETAFLIGHT,"Como el menú OSD de Betaflight: pitch arriba y abajo para moverte, roll a la derecha para aceptar y roll a la izquierda para volver. Sobre un deslizador o una lista, roll ajusta el valor. El acelerador nunca navega.","Like the Betaflight OSD menu: pitch up and down to move, roll right to select and roll left to go back. On a slider or a list, roll adjusts the value. Throttle never navigates."
+GAME_STICK_NAVIGATION_HELP_GAMEPAD,"Los dos sticks y la cruceta mueven el foco; ✕ acepta, ○ vuelve y L1/R1 cambian de sección (A, B, LB y RB en un mando Xbox). Elegí Betaflight o Yaw solo si usás una radio sin botones.","Both sticks and the D-pad move the focus; ✕ selects, ○ goes back and L1/R1 switch sections (A, B, LB and RB on an Xbox controller). Choose Betaflight or Yaw only with a radio that has no buttons."
 GAME_STICK_NAVIGATION_HELP_YAW,"Pitch arriba y abajo para moverte, roll para ajustar valores, yaw a la derecha para aceptar y yaw a la izquierda para volver. El acelerador nunca navega.","Pitch up and down to move, roll to adjust values, yaw right to select and yaw left to go back. Throttle never navigates."
 GAME_STICK_NAVIGATION_YAW,Aceptar con yaw,Select with yaw
 GAME_TAB_GAMEPLAY,Juego,Game
@@ -105,11 +111,13 @@ Choose the starting mode in Drone settings. The pilot view (X / C) shows how the
 HELP_GOAL,"[b]Tu trabajo[/b]
 Sos el camarógrafo aéreo de un rally. Antes de la largada abrí la tablet (D-pad ↑ o M) para ver el camino, dónde estás y cuándo pasa el auto por tu posición. Caminá hasta un buen lugar cerca del camino, desplegá el dron, despegá antes de que llegue el auto y grabá su paso. Cada toma recibe una nota de C a S y al final de la etapa ves todas tus tomas.","[b]Your job[/b]
 You are the aerial camera operator of a rally. Before the start, open the tablet (D-pad ↑ or M) to see the road, where you are and when the car reaches your spot. Walk to a good place near the road, deploy the drone, take off before the car arrives and record it going by. Every clip gets a grade from C to S and at the end of the stage you see all your clips."
-HELP_MENU_NAVIGATION,"[b]Menús con un solo periférico[/b]
-Con gamepad: cruceta para moverte, A para aceptar y B para volver.
-Con radio: pitch arriba y abajo para moverte, roll a la derecha para aceptar y roll a la izquierda para volver (sobre un deslizador, roll ajusta el valor). Podés cambiar el esquema en Opciones > Juego y HUD.","[b]Menus with a single device[/b]
-With a gamepad: D-pad to move, A to select and B to go back.
-With a radio: pitch up and down to move, roll right to select and roll left to go back (on a slider, roll adjusts the value). You can change the scheme in Options > Game and HUD."
+HELP_MENU_NAVIGATION,"[b]Menús con el mando, el teclado o una radio[/b]
+Con gamepad: la cruceta o cualquiera de los dos sticks para moverte, ✕ para aceptar, ○ para volver y L1/R1 para pasar de columna o de pestaña (A, B, LB y RB en un mando Xbox). Sobre un deslizador o una lista, izquierda y derecha cambian el valor.
+Con teclado: flechas para moverte, Enter para aceptar, Esc para volver y Tab para pasar de columna.
+Con una radio sin botones, elegí el esquema Betaflight o Yaw en Opciones > Juego y HUD: pitch arriba y abajo para moverte, roll (o yaw) a la derecha para aceptar y a la izquierda para volver.","[b]Menus with a gamepad, the keyboard or a radio[/b]
+With a gamepad: the D-pad or either stick to move, ✕ to select, ○ to go back and L1/R1 to switch column or tab (A, B, LB and RB on an Xbox controller). On a slider or a list, left and right change the value.
+With the keyboard: arrows to move, Enter to select, Esc to go back and Tab to switch column.
+With a radio that has no buttons, choose the Betaflight or Yaw scheme in Options > Game and HUD: pitch up and down to move, roll (or yaw) right to select and left to go back."
 HELP_SCORING,"[b]Cómo se puntúa una toma[/b]
 Mientras grabás, cada cuadro mide cuatro cosas:
   •  Encuadre (35 %): el auto cerca del centro o de un punto de los tercios.
@@ -318,6 +326,7 @@ UI_HINT_ACCEPT,Aceptar,Select
 UI_HINT_ADJUST,Ajustar,Adjust
 UI_HINT_BACK,Volver,Back
 UI_HINT_NAVIGATE,Navegar,Navigate
+UI_HINT_SECTION,Sección,Section
 UI_KEY_DPAD,Cruceta,D-pad
 UI_NO_CONTROLLER,Sin mando conectado,No controller connected
 UI_NO_CONTROLLER_WEB,Presioná un botón del mando para activarlo,Press a button on your controller to activate it

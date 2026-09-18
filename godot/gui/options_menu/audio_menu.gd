@@ -16,6 +16,8 @@ extends MenuScreen
 
 func _ready() -> void:
 	initial_focus = master_volume
+	focus_groups = [$PanelContainer/VBoxContainer/Grid as Control,
+			$PanelContainer/VBoxContainer/Footer as Control]
 	super()
 	_bind(master_volume, master_volume_label, "master_volume")
 	_bind(motors_volume, motors_volume_label, "motors_volume")

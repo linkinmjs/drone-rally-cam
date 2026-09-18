@@ -10,6 +10,8 @@ const PACKED_PAUSE_MENU := preload("res://gui/pause_menu.tscn")
 const PACKED_RESULTS := preload("res://ui/results_screen.tscn")
 ## Seconds between the car's finish (and the end of a clip being recorded) and the results.
 const RESULTS_DELAY := 4.0
+## Longest wait for the buttons and sticks to be released when leaving the pause menu.
+const RESUME_RELEASE_TIMEOUT_MSEC := 500
 ## Within this distance of the road the player is "close to the road" for the checklist.
 const NEAR_ROAD := 40.0
 const CHECKLIST: Array[String] = [
@@ -115,7 +117,7 @@ func open_pause_menu() -> void:
 	menus.add_child(pause_menu)
 	var _discard := pause_menu.resumed.connect(_on_pause_resumed)
 	_discard = pause_menu.restart_requested.connect(restart)
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	UI.show_mouse()
 
 
 ## Pauses the game and lists the clips of the stage.
@@ -130,7 +132,7 @@ func show_results() -> void:
 	menus.add_child(results)
 	results.show_results(world.car.driver_name, clips)
 	var _discard := results.restart_requested.connect(restart)
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	UI.show_mouse()
 
 
 func restart() -> void:
@@ -138,9 +140,10 @@ func restart() -> void:
 	var _err := get_tree().reload_current_scene()
 
 
-## Copy of drone-simulator's Level._on_resume: the button or stick gesture used to resume
-## must not reach the drone (A also cycles the flight mode), so the game stays paused until
-## everything is released.
+## Adapted from drone-simulator's Level._on_resume: the button or stick gesture used to
+## resume must not reach the drone (✕ also cycles the flight mode), so the game stays paused
+## until everything is released, but never longer than RESUME_RELEASE_TIMEOUT_MSEC: a stick
+## that does not come back to the center must not leave the game paused without a menu.
 func _on_pause_resumed() -> void:
 	if not pause_menu or not pause_menu.can_resume:
 		return
@@ -148,7 +151,8 @@ func _on_pause_resumed() -> void:
 	pause_menu.queue_free()
 	pause_menu = null
 	await get_tree().process_frame
-	while is_inside_tree() and _resume_input_held():
+	var deadline := Time.get_ticks_msec() + RESUME_RELEASE_TIMEOUT_MSEC
+	while is_inside_tree() and _resume_input_held() and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
 	if is_inside_tree():
 		get_tree().paused = false

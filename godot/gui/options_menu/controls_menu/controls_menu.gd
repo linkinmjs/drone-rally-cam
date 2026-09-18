@@ -1,5 +1,6 @@
 # Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: no Global autoload,
-# rebinding a joypad button keeps the keyboard and mouse bindings, stick deadzone row.
+# rebinding a joypad button keeps the keyboard and mouse bindings, stick deadzone row, L1/R1
+# columns, controller auto-detection only when the list is opened with the mouse.
 extends MenuScreen
 
 
@@ -37,6 +38,8 @@ var calibrating_axes := false
 
 func _ready() -> void:
 	initial_focus = controller_list
+	focus_groups = [$Columns/ControllerPanel as Control, menu_panel,
+			$Columns/BindingsPanel as Control]
 	super()
 	var _discard := controller_detected.connect(_on_controller_autodetected)
 	_discard = Input.joy_connection_changed.connect(_on_joypad_connection_changed)
@@ -163,7 +166,7 @@ func _on_calibrate_pressed() -> void:
 	calibration_menu.queue_free()
 	menu_panel.visible = true
 	await get_tree().process_frame
-	if not UI.is_using_mouse():
+	if UI.wants_focus():
 		button_calibrate.grab_focus()
 
 
@@ -177,7 +180,7 @@ func _on_reset_pressed() -> void:
 		(binding as GUIControllerBinding).remove_binding()
 	Controls.reset_controller_bindings()
 	update_input_map()
-	if not UI.is_using_mouse():
+	if UI.wants_focus():
 		button_reset.grab_focus()
 
 
@@ -208,9 +211,12 @@ func _on_joypad_connection_changed(_device: int, _connected: bool) -> void:
 		controller_list.get_popup().id_pressed.emit(active_controller)
 
 
+## Opened with a click, the list also picks the controller whose button is pressed next.
+## Opened with a gamepad or the keyboard it is a normal list: the pad's own buttons have to
+## navigate it.
 func _on_controller_list_pressed() -> void:
 	update_controller_list()
-	auto_detect_controller = true
+	auto_detect_controller = UI.is_using_mouse()
 
 
 func _on_controller_select_aborted() -> void:
@@ -377,7 +383,7 @@ func _close_binding_popup() -> void:
 		binding_popup.close()
 		binding_popup = null
 	await get_tree().process_frame
-	if is_instance_valid(target) and not UI.is_using_mouse():
+	if is_instance_valid(target) and UI.wants_focus():
 		target.grab_focus()
 
 

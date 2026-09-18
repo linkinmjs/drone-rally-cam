@@ -1,5 +1,6 @@
 # Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: progress bars
-# do not tick.
+# do not tick; gamepad-friendly input kind detection (stick motion, cursor jump when the mouse
+# is released) and the first accept press after a focus loss is not lost.
 extends Node
 ## Global interface services: input device tracking, focus handling shared by every menu,
 ## interface sounds and micro animations, and modal overlays (confirm / alert).
@@ -19,12 +20,18 @@ const SOUNDS := {
 }
 const NAV_ACTIONS: Array[StringName] = [&"ui_up", &"ui_down", &"ui_left", &"ui_right",
 		&"ui_accept", &"ui_focus_next", &"ui_focus_prev"]
+## Mouse motion right after showing the cursor is the jump of the cursor itself, not the
+## player moving the mouse: ignored for this long.
+const MOUSE_SHOW_GRACE_MSEC := 400
+## Stick deflection that counts as using the gamepad.
+const STICK_KIND_THRESHOLD := 0.5
 
 var input_kind := InputKind.MOUSE
 var _players := {}
 var _mute_until_msec := 0
 var _last_sound_msec := {}
 var _overlay_layer: CanvasLayer = null
+var _mouse_shown_msec := -100000
 ## Focus contexts: menus and overlays that can receive keyboard/gamepad focus.
 ## The last visible one is the active context.
 var _contexts: Array[Control] = []
@@ -160,10 +167,24 @@ func is_using_mouse() -> bool:
 	return input_kind == InputKind.MOUSE
 
 
+## True when menus should show and keep a keyboard/gamepad focus: not using the mouse, or
+## a gamepad was the last device used (a nudged mouse must not hide the focus from a pad).
+func wants_focus() -> bool:
+	return not is_using_mouse() or Controls.using_gamepad
+
+
+## Makes the cursor visible for a menu. Use this instead of setting Input.mouse_mode: the
+## jump of the cursor when it is released must not count as the player using the mouse.
+func show_mouse() -> void:
+	_mouse_shown_msec = Time.get_ticks_msec()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		if (event as InputEventMouseMotion).relative.length_squared() > 9.0 \
-				and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+				and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE \
+				and Time.get_ticks_msec() - _mouse_shown_msec > MOUSE_SHOW_GRACE_MSEC:
 			set_input_kind(InputKind.MOUSE)
 		return
 	elif event is InputEventMouseButton:
@@ -174,6 +195,11 @@ func _input(event: InputEvent) -> void:
 		set_input_kind(InputKind.KEYBOARD)
 	elif event is InputEventJoypadButton and event.is_pressed():
 		set_input_kind(InputKind.GAMEPAD)
+	elif event is InputEventJoypadMotion:
+		if absf((event as InputEventJoypadMotion).axis_value) > STICK_KIND_THRESHOLD \
+				and input_kind != InputKind.STICKS:
+			set_input_kind(InputKind.GAMEPAD)
+		return
 
 	if not event.is_pressed() or _contexts.is_empty():
 		return
@@ -190,11 +216,14 @@ func _input(event: InputEvent) -> void:
 		return
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus == null or not context.is_ancestor_of(focus) and focus != context:
-		# First key/button press after using the mouse: show where the focus is
-		# instead of acting on an invisible target.
+		# First key/button press after using the mouse: show where the focus is instead of
+		# acting on an invisible target. An accept press is then replayed once on the newly
+		# focused control, so a single press is enough.
 		if context.has_method(&"grab_initial_focus"):
 			context.call(&"grab_initial_focus", true)
 		get_viewport().set_input_as_handled()
+		if event.is_action(&"ui_accept", true) and not event.has_meta(&"ui_replayed"):
+			_replay_accept.call_deferred(event)
 		return
 
 	var left := event.is_action(&"ui_left", true)
@@ -221,6 +250,34 @@ func _input(event: InputEvent) -> void:
 			toggle.button_pressed = right
 			play("click")
 		get_viewport().set_input_as_handled()
+
+
+## Sends an accept press (and its release) again, once the focus is in place.
+func _replay_accept(original: InputEvent) -> void:
+	var context := get_active_context()
+	var focus := get_viewport().gui_get_focus_owner()
+	if context == null or focus == null or not (context.is_ancestor_of(focus) or focus == context):
+		return
+	var press := original.duplicate() as InputEvent
+	press.set_meta(&"ui_replayed", true)
+	Input.parse_input_event(press)
+	var release := _released_copy(original)
+	if release:
+		release.set_meta(&"ui_replayed", true)
+		Input.parse_input_event(release)
+
+
+static func _released_copy(event: InputEvent) -> InputEvent:
+	var copy := event.duplicate() as InputEvent
+	if copy is InputEventKey:
+		(copy as InputEventKey).pressed = false
+	elif copy is InputEventJoypadButton:
+		(copy as InputEventJoypadButton).pressed = false
+	elif copy is InputEventAction:
+		(copy as InputEventAction).pressed = false
+	else:
+		return null
+	return copy
 
 
 func register_context(control: Control) -> void:

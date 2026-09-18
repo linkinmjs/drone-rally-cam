@@ -61,6 +61,20 @@ static func label(action: String, gamepad: bool = Controls.using_gamepad) -> Str
 	return text if not text.is_empty() else action
 
 
+## True when menus should show gamepad buttons: the pad was used last, or the sticks drive
+## the menus in the gamepad scheme.
+static func menu_uses_pad() -> bool:
+	if UI.input_kind == UI.InputKind.GAMEPAD or Controls.using_gamepad:
+		return true
+	return UI.input_kind == UI.InputKind.STICKS \
+			and StickNavigation.scheme == StickNavigation.Scheme.GAMEPAD
+
+
+## Name of the key or button of a menu action (ui_accept, ui_cancel…) on the device in use.
+static func menu_key(action: StringName) -> String:
+	return label(action, menu_uses_pad())
+
+
 static func _group_label(group: String, gamepad: bool) -> String:
 	var names: PackedStringArray = []
 	for action: String in GROUPS[group]:

@@ -10,6 +10,10 @@ signal game_settings_updated
 enum HudPreset {CINE, PILOT, FULL, CUSTOM}
 
 const LANGUAGE := "es"
+## Default menu navigation with the sticks: StickNavigation.Scheme.GAMEPAD. Written as a number
+## because this autoload is created before StickNavigation.
+const STICK_NAV_DEFAULT := 2
+const STICK_NAV_MAX := 2
 const HUD_BOOL_KEYS: Array[String] = ["crosshair", "horizon", "ladder", "speed", "altitude",
 		"heading", "sticks", "rpm", "flight_mode", "status", "side_tapes", "car_marker",
 		"pilot_guide", "score_bars", "thirds"]
@@ -34,9 +38,11 @@ var game_settings_path := "%s/GameSettings.cfg" % [Controls.CONFIG_DIR]
 
 var hud_config := {"fps": 10, "horizon_mode": "camera"}
 
-## `nav_scheme`: how the radio sticks drive the menus. `stick_deadzone`: radial deadzone of
-## the flight sticks (gamepads rest a few percent off-centre; 0 for a real radio).
-var game_config := {"nav_scheme": 0, "stick_deadzone": 0.08}
+## `stick_nav`: how the sticks drive the menus (StickNavigation.Scheme). It replaced
+## `nav_scheme`, whose saved 0 (Betaflight) must not carry over now that gamepads have their
+## own scheme. `stick_deadzone`: radial deadzone of the flight sticks (gamepads rest a few
+## percent off-centre; 0 for a real radio).
+var game_config := {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08}
 
 
 func _init() -> void:
@@ -68,6 +74,8 @@ func save_game_settings() -> void:
 	if err == OK or err == ERR_FILE_NOT_FOUND or err == ERR_PARSE_ERROR:
 		for key: String in game_config.keys():
 			config.set_value("game", key, game_config[key])
+		if config.has_section_key("game", "nav_scheme"):
+			config.erase_section_key("game", "nav_scheme")
 		err = config.save(game_settings_path)
 	if err != OK:
 		push_error("Error while saving game settings: %s" % [error_string(err)])
@@ -84,11 +92,11 @@ func apply_game_settings() -> void:
 
 
 func get_nav_scheme() -> int:
-	return clampi(int(game_config["nav_scheme"]), 0, 1)
+	return clampi(int(game_config["stick_nav"]), 0, STICK_NAV_MAX)
 
 
 func set_nav_scheme(scheme: int) -> void:
-	game_config["nav_scheme"] = scheme
+	game_config["stick_nav"] = clampi(scheme, 0, STICK_NAV_MAX)
 	apply_game_settings()
 	save_game_settings()
 
@@ -159,7 +167,7 @@ func get_hud_preset() -> HudPreset:
 
 ## Restores the defaults in memory, without saving (used by the automated checks).
 func reset_to_defaults() -> void:
-	game_config = {"nav_scheme": 0, "stick_deadzone": 0.08}
+	game_config = {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08}
 	var defaults: Dictionary = HUD_PRESETS[HudPreset.PILOT]
 	for key: String in defaults:
 		hud_config[key] = defaults[key]

@@ -1,3 +1,5 @@
+# Modified from drone-simulator (GPL-3.0), 2026: the pause button cancels while listening,
+# every direction moves between the buttons.
 class_name BindingPopup
 extends Control
 ## Assigns a controller input to an action. Two states:
@@ -142,15 +144,15 @@ func _set_state(new_state: State) -> void:
 		var next := visible_buttons[wrapi(i + 1, 0, visible_buttons.size())]
 		b.focus_neighbor_left = b.get_path_to(prev)
 		b.focus_neighbor_right = b.get_path_to(next)
-		b.focus_neighbor_top = b.get_path_to(b)
-		b.focus_neighbor_bottom = b.get_path_to(b)
+		b.focus_neighbor_top = b.get_path_to(prev)
+		b.focus_neighbor_bottom = b.get_path_to(next)
 		b.focus_previous = b.get_path_to(prev)
 		b.focus_next = b.get_path_to(next)
 	grab_initial_focus.call_deferred(true)
 
 
 func grab_initial_focus(force := false) -> void:
-	if not is_inside_tree() or (not force and UI.is_using_mouse()):
+	if not is_inside_tree() or (not force and not UI.wants_focus()):
 		return
 	UI.mute_for(0.1)
 	if state == State.CAPTURED:
@@ -163,8 +165,11 @@ func _input(event: InputEvent) -> void:
 	if _closing:
 		return
 	if state == State.LISTENING:
-		# Joypad buttons are candidates for the binding, so only the keyboard can cancel here
-		if event is InputEventKey and event.is_action_pressed(&"ui_cancel", false, true):
+		# Joypad buttons are candidates for the binding, so only Esc and the pause button
+		# (Options / Start, never bound to an action) cancel here.
+		var keyboard_cancel := event is InputEventKey \
+				and event.is_action_pressed(&"ui_cancel", false, true)
+		if keyboard_cancel or event.is_action_pressed(&"pause_menu", false, true):
 			get_viewport().set_input_as_handled()
 			UI.play("back")
 			cancel_pressed.emit()

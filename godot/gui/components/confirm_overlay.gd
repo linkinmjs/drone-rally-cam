@@ -1,3 +1,5 @@
+# Modified from drone-simulator (GPL-3.0), 2026: every direction moves between the buttons,
+# explicit accept handling and a hint row with the buttons of the device in use.
 class_name ConfirmOverlay
 extends Control
 ## Modal question drawn inside the interface (no OS window), navigable with
@@ -14,6 +16,7 @@ var _done := false
 var _card: PanelContainer = null
 var _button_ok: Button = null
 var _button_cancel: Button = null
+var _hint: Label = null
 
 
 func setup(text: String, ok_text: String, cancel_text: String, danger: bool) -> void:
@@ -76,7 +79,17 @@ func _ready() -> void:
 	buttons.add_child(_button_ok)
 	var _discard := _button_ok.pressed.connect(_close.bind(true))
 
-	# Keep keyboard/gamepad focus inside the dialog
+	_hint = Label.new()
+	_hint.theme_type_variation = &"HintLabel"
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	vbox.add_child(_hint)
+	_update_hint()
+	_discard = UI.input_kind_changed.connect(_update_hint.unbind(1))
+	_discard = Controls.input_device_changed.connect(_update_hint.unbind(1))
+
+	# Keep keyboard/gamepad focus inside the dialog. Every direction moves to the other
+	# button: with two buttons side by side, up and down (stick or D-pad) must reach
+	# Confirm too.
 	var focusables: Array[Button] = []
 	if _button_cancel:
 		focusables.append(_button_cancel)
@@ -87,8 +100,8 @@ func _ready() -> void:
 		var next := focusables[wrapi(i + 1, 0, focusables.size())]
 		b.focus_neighbor_left = b.get_path_to(prev)
 		b.focus_neighbor_right = b.get_path_to(next)
-		b.focus_neighbor_top = b.get_path_to(b)
-		b.focus_neighbor_bottom = b.get_path_to(b)
+		b.focus_neighbor_top = b.get_path_to(prev)
+		b.focus_neighbor_bottom = b.get_path_to(next)
 		b.focus_previous = b.get_path_to(prev)
 		b.focus_next = b.get_path_to(next)
 
@@ -108,7 +121,7 @@ func _exit_tree() -> void:
 
 ## The safe choice gets the focus: Cancel when there is one.
 func grab_initial_focus(force := false) -> void:
-	if not force and UI.is_using_mouse():
+	if not force and not UI.wants_focus():
 		return
 	UI.mute_for(0.1)
 	if _button_cancel:
@@ -120,13 +133,33 @@ func grab_initial_focus(force := false) -> void:
 func _input(event: InputEvent) -> void:
 	if _done:
 		return
-	if event.is_action_pressed(&"ui_cancel", false, true):
+	if event.is_action_pressed(&"ui_accept", false, true) and not _owns_focus():
+		# Accept with the focus somewhere else (or nowhere): show the choice first, never
+		# answer blindly.
+		get_viewport().set_input_as_handled()
+		grab_initial_focus(true)
+	elif event.is_action_pressed(&"ui_cancel", false, true):
 		get_viewport().set_input_as_handled()
 		UI.play("back")
 		_close(false)
 	elif event.is_action_pressed(&"pause_menu", false, true):
 		# Do not let the pause menu react underneath the dialog
 		get_viewport().set_input_as_handled()
+
+
+func _owns_focus() -> bool:
+	var focus := get_viewport().gui_get_focus_owner()
+	return focus != null and (focus == _button_ok or focus == _button_cancel)
+
+
+func _update_hint() -> void:
+	if not is_instance_valid(_hint):
+		return
+	var parts := PackedStringArray()
+	parts.append("%s  %s" % [InputHints.menu_key(&"ui_accept"), tr("UI_HINT_ACCEPT")])
+	if _button_cancel:
+		parts.append("%s  %s" % [InputHints.menu_key(&"ui_cancel"), tr("UI_HINT_BACK")])
+	_hint.text = "      ".join(parts)
 
 
 func _close(confirmed: bool) -> void:

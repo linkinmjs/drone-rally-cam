@@ -73,6 +73,9 @@ const DEFAULT_MODE_NAMES: Array[String] = ["QUAD_MODE_STABILIZED", "QUAD_MODE_AT
 
 func _ready() -> void:
 	initial_focus = default_mode_options
+	focus_groups = [$PanelContainer/VBoxContainer/SettingsHBox/QuadScroll as Control,
+			$PanelContainer/VBoxContainer/SettingsHBox/RatesScroll as Control,
+			$PanelContainer/VBoxContainer/ButtonsHBox as Control]
 	super()
 	QuadSettings.load_quad_settings()
 

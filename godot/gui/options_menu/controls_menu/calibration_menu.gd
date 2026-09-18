@@ -1,4 +1,5 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: no Global autoload.
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: no Global autoload,
+# keeps the keyboard bindings, one axis per control.
 extends MenuScreen
 
 
@@ -19,6 +20,7 @@ var roll := []
 
 var calibration_is_done := false
 var display_popup := false
+var _taken_notice_until := 0
 
 
 func _ready() -> void:
@@ -91,6 +93,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				go_to_next_step()
 		elif calibration_step == 5:
 			# Yaw axis
+			if _reject_taken_axis(event):
+				return
 			if axes.find(event.axis) >= 0 and absf(event.axis_value) > 0.9:
 				yaw.append(event.axis)
 				yaw.append(event)
@@ -105,6 +109,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				go_to_next_step()
 		elif calibration_step == 8:
 			# Pitch axis
+			if _reject_taken_axis(event):
+				return
 			if axes.find(event.axis) >= 0 and absf(event.axis_value) > 0.9:
 				pitch.append(event.axis)
 				pitch.append(event)
@@ -119,6 +125,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				go_to_next_step()
 		elif calibration_step == 11:
 			# Roll axis
+			if _reject_taken_axis(event):
+				return
 			if axes.find(event.axis) >= 0 and absf(event.axis_value) > 0.9:
 				roll.append(event.axis)
 				roll.append(event)
@@ -133,7 +141,32 @@ func _unhandled_input(event: InputEvent) -> void:
 				go_to_next_step()
 
 
+## Axes already given to throttle, yaw or pitch cannot be picked again for another control.
+func taken_axes() -> Dictionary:
+	var taken := {}
+	if throttle.size() > 0:
+		taken[throttle[0]] = "CAL_AXIS_THROTTLE"
+	if yaw.size() > 0:
+		taken[yaw[0]] = "CAL_AXIS_YAW"
+	if pitch.size() > 0:
+		taken[pitch[0]] = "CAL_AXIS_PITCH"
+	return taken
+
+
+func _reject_taken_axis(event: InputEventJoypadMotion) -> bool:
+	var taken := taken_axes()
+	if not taken.has(event.axis):
+		return false
+	if absf(event.axis_value) > 0.9 and Time.get_ticks_msec() > _taken_notice_until:
+		_taken_notice_until = Time.get_ticks_msec() + 1500
+		UI.play("error")
+		title.text = tr("CAL_AXIS_TAKEN") % [tr(taken[event.axis])]
+	return true
+
+
 func go_to_next_step() -> void:
+	if calibration_step >= 0 and device >= 0:
+		title.text = tr("CAL_TITLE_DEVICE") % [Input.get_joy_name(device)]
 	calibration_step += 1
 	calibration_step_changed.emit(calibration_step)
 
@@ -173,28 +206,26 @@ func go_to_next_step() -> void:
 
 func _on_calibration_done() -> void:
 	calibration_is_done = true
-	InputMap.action_erase_events("throttle_up")
-	InputMap.action_erase_events("throttle_down")
-	InputMap.action_add_event("throttle_up", throttle[1])
-	InputMap.action_add_event("throttle_down", throttle[2])
-	InputMap.action_erase_events("yaw_left")
-	InputMap.action_erase_events("yaw_right")
-	InputMap.action_add_event("yaw_left", yaw[1])
-	InputMap.action_add_event("yaw_right", yaw[2])
-	InputMap.action_erase_events("pitch_down")
-	InputMap.action_erase_events("pitch_up")
-	InputMap.action_add_event("pitch_down", pitch[1])
-	InputMap.action_add_event("pitch_up", pitch[2])
-	InputMap.action_erase_events("roll_left")
-	InputMap.action_erase_events("roll_right")
-	InputMap.action_add_event("roll_left", roll[1])
-	InputMap.action_add_event("roll_right", roll[2])
+	apply_calibration()
 	var err := save_input_map()
 	if err != OK:
 		await UI.alert("CAL_SAVE_ERROR")
 
 	await get_tree().create_timer(2.0).timeout
 	request_back()
+
+
+## Replaces only the joypad events of the stick actions: W/S/A/D and the arrows must keep
+## flying the drone after a calibration.
+func apply_calibration() -> void:
+	var pairs := [["throttle_up", throttle[1]], ["throttle_down", throttle[2]],
+			["yaw_left", yaw[1]], ["yaw_right", yaw[2]],
+			["pitch_down", pitch[1]], ["pitch_up", pitch[2]],
+			["roll_left", roll[1]], ["roll_right", roll[2]]]
+	for pair: Array in pairs:
+		Controls.erase_joypad_events(pair[0])
+	for pair: Array in pairs:
+		InputMap.action_add_event(pair[0], pair[1])
 
 
 func save_input_map() -> Error:

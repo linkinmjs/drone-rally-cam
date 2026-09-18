@@ -48,6 +48,8 @@ El mapeo del gamepad es el del simulador. Todo se puede reasignar en Opciones > 
 | Pausa | Start (Options) | Esc |
 | Reiniciar la etapa al terminar | | Enter |
 
+En los menús, la cruceta o cualquiera de los dos sticks mueven el foco, ✕ acepta, ○ vuelve y L1/R1 pasan de columna o de pestaña (con teclado: flechas, Enter, Esc y Tab). Si usás una radio sin botones, elegí el esquema Betaflight o Yaw en Opciones > Juego y HUD.
+
 Detalles del vuelo:
 
 - **Modo por defecto: Estabilizado.** Se elige en Ajustes del dron. Los sticks mandan la velocidad directamente: el dron responde enseguida y, al soltarlos, frena hasta un punto calculado según su velocidad y se queda quieto ahí. Se arma con el acelerador al centro.
@@ -92,7 +94,7 @@ Estos son los valores de diseño que más conviene tocar al probar:
 
 ## Chequeos automáticos
 
-Hay trece chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
+Hay catorce chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
 
 - **Carga:** todos los recursos del juego cargan sin errores.
 - **Dron:** vuelo, respuesta y frenado del Estabilizado, choque, despegue en pendiente, aterrizaje y recuperación.
@@ -107,6 +109,7 @@ Hay trece chequeos que corren sin ventana. Usan su propia carpeta de configuraci
 - **Vista de piloto:** cambio de cámara, horizonte y datos del HUD.
 - **Información de la etapa:** mapa, cuenta regresiva, radio, checklist y marcador del dron.
 - **Puntaje en pantalla:** consejos, motivos, guía de pilotaje y resultados.
+- **Menús con mando:** foco al pausar, una sola ✕ alcanza, Confirmar alcanzable en el diálogo, sticks que solo navegan, reanudar sin colgarse, L1/R1 por sección, glifos del mando y calibración que conserva el teclado.
 
 ```sh
 godot --headless --path godot --import

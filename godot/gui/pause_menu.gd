@@ -59,7 +59,7 @@ func set_menu_visibility(show_menu: bool) -> void:
 	visible = show_menu
 	StickNavigation.suspended = not show_menu
 	if visible:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		UI.show_mouse()
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 

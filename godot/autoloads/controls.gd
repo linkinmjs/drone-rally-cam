@@ -42,8 +42,14 @@ func _input(event: InputEvent) -> void:
 		input_device_changed.emit(using_gamepad)
 
 
+## Tests only: 1 forces PlayStation button names, 0 forces Xbox names, -1 detects the pad.
+var force_playstation := -1
+
+
 ## PlayStation controllers get their own button names in the hints.
 func is_playstation_pad() -> bool:
+	if force_playstation >= 0:
+		return force_playstation == 1
 	var device := last_joy_device
 	if device < 0:
 		var pads := Input.get_connected_joypads()

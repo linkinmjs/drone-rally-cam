@@ -1,18 +1,25 @@
 extends Node
-## Lets a radio transmitter without buttons (or the sticks of a gamepad) drive the menus,
-## like the Betaflight OSD menu. It reads the already calibrated pitch / roll / yaw actions
-## and injects the matching ui_* actions. Throttle never navigates, since on a radio it
-## rests at the bottom.
+## Lets the sticks drive the menus. It reads the already calibrated flight actions and
+## injects the matching ui_* actions, with a controlled repeat (the ui_* actions have no
+## stick axes of their own, so this is the only analog source of menu navigation).
+##
+## Schemes:
+## - GAMEPAD (default): both sticks only move the focus; the buttons accept and go back.
+## - BETAFLIGHT: for a radio without buttons, like the Betaflight OSD menu: pitch moves,
+##   roll right accepts and roll left goes back (on a value control roll adjusts it).
+## - YAW_SELECT: for a radio, pitch moves, roll adjusts, yaw accepts and goes back.
+## On a radio the throttle rests at the bottom, so it only navigates in GAMEPAD.
 
 
-enum Scheme {BETAFLIGHT, YAW_SELECT}
+enum Scheme {BETAFLIGHT, YAW_SELECT, GAMEPAD}
 
 const THRESHOLD := 0.6
 const RELEASE := 0.4
 const INITIAL_DELAY := 0.35
 const REPEAT := 0.12
+const AXES: Array[String] = ["pitch", "roll", "yaw", "throttle"]
 
-var scheme := Scheme.BETAFLIGHT
+var scheme := Scheme.GAMEPAD
 ## Set while an action binding or the calibration is listening to the sticks.
 var suspended := false:
 	set(value):
@@ -22,8 +29,8 @@ var suspended := false:
 ## Tests only: behave as if a joypad were connected.
 var assume_joypad := false
 
-var _dir := {"pitch": 0, "roll": 0, "yaw": 0}
-var _timer := {"pitch": 0.0, "roll": 0.0, "yaw": 0.0}
+var _dir := {"pitch": 0, "roll": 0, "yaw": 0, "throttle": 0}
+var _timer := {"pitch": 0.0, "roll": 0.0, "yaw": 0.0, "throttle": 0.0}
 var _was_active := false
 
 
@@ -44,10 +51,26 @@ func _process(delta: float) -> void:
 		_was_active = true
 		_prime_axes()
 		return
-	# Pushing the stick up is "pitch down" (nose down, fly forward): it moves the focus up
-	_update("pitch", Input.get_axis(&"pitch_up", &"pitch_down"), delta)
-	_update("roll", Input.get_axis(&"roll_left", &"roll_right"), delta)
-	_update("yaw", Input.get_axis(&"yaw_left", &"yaw_right"), delta)
+	for axis in AXES:
+		if axis == "throttle" and scheme != Scheme.GAMEPAD:
+			continue
+		_update(axis, axis_value(axis), delta)
+
+
+## Current deflection of a stick axis. Positive is "up" for pitch and throttle (the stick
+## pushed away from the player) and "right" for roll and yaw.
+static func axis_value(axis: String) -> float:
+	match axis:
+		"pitch":
+			# Pushing the stick up is "pitch down" (nose down, fly forward): it moves the focus up
+			return Input.get_axis(&"pitch_up", &"pitch_down")
+		"roll":
+			return Input.get_axis(&"roll_left", &"roll_right")
+		"yaw":
+			return Input.get_axis(&"yaw_left", &"yaw_right")
+		"throttle":
+			return Input.get_axis(&"throttle_down", &"throttle_up")
+	return 0.0
 
 
 func _update(axis: String, value: float, delta: float) -> void:
@@ -94,11 +117,16 @@ func action_for(axis: String, dir: int) -> StringName:
 	match axis:
 		"pitch":
 			return &"ui_up" if dir > 0 else &"ui_down"
+		"throttle":
+			if scheme == Scheme.GAMEPAD:
+				return &"ui_up" if dir > 0 else &"ui_down"
 		"roll":
-			if scheme == Scheme.YAW_SELECT or _focus_is_value_control():
+			if scheme != Scheme.BETAFLIGHT or _focus_is_value_control():
 				return &"ui_right" if dir > 0 else &"ui_left"
 			return &"ui_accept" if dir > 0 else &"ui_cancel"
 		"yaw":
+			if scheme == Scheme.GAMEPAD:
+				return &"ui_right" if dir > 0 else &"ui_left"
 			if scheme == Scheme.YAW_SELECT:
 				return &"ui_accept" if dir > 0 else &"ui_cancel"
 	return &""
@@ -112,22 +140,20 @@ func _focus_is_value_control() -> bool:
 			or focus is CheckButton or focus is CheckBox or focus.has_meta(&"stick_value_control")
 
 
+## True while pitch, roll or yaw is clearly away from the center, taking the player's stick
+## dead zone into account (a worn stick resting at 0.3 must not count). Throttle is left out:
+## on a radio it rests at the bottom.
 func any_axis_deflected() -> bool:
-	return absf(Input.get_axis(&"pitch_up", &"pitch_down")) > RELEASE \
-			or absf(Input.get_axis(&"roll_left", &"roll_right")) > RELEASE \
-			or absf(Input.get_axis(&"yaw_left", &"yaw_right")) > RELEASE
+	var threshold := maxf(RELEASE, GameSettings.get_stick_deadzone() + 0.15)
+	for axis: String in ["pitch", "roll", "yaw"]:
+		if absf(axis_value(axis)) > threshold:
+			return true
+	return false
 
 
 func _prime_axes() -> void:
-	for axis: String in ["pitch", "roll", "yaw"]:
-		var value := 0.0
-		match axis:
-			"pitch":
-				value = Input.get_axis(&"pitch_up", &"pitch_down")
-			"roll":
-				value = Input.get_axis(&"roll_left", &"roll_right")
-			"yaw":
-				value = Input.get_axis(&"yaw_left", &"yaw_right")
+	for axis in AXES:
+		var value := axis_value(axis)
 		_dir[axis] = signi(value) if absf(value) > RELEASE else 0
 		_timer[axis] = 1000.0
 

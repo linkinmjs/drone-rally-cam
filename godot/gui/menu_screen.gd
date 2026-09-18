@@ -4,6 +4,11 @@ extends Control
 ## (instantiate → add_child → hide the parent → await back → queue_free) and centralizes:
 ## the back action, keyboard/gamepad/stick focus, the open/close fade, the background
 ## and the footer with control hints.
+##
+## Sections: a screen with several columns sets `focus_groups` (or `section_tabs` for a
+## TabContainer) in its _ready, before super(). ui_focus_next / ui_focus_prev (R1 / L1, Tab /
+## Shift+Tab) then jump to the next section, since left/right on sliders and lists adjust
+## their value instead of leaving the column.
 
 
 signal back
@@ -16,6 +21,11 @@ enum Backdrop {AUTO, OPAQUE, SCRIM, NONE}
 @export var show_hints := true
 @export var allow_back := true
 @export var apply_screen_margins := true
+
+## Columns or blocks of the screen, in navigation order. See the class description.
+var focus_groups: Array[Control] = []
+## Tabs switched by ui_focus_next / ui_focus_prev.
+var section_tabs: TabContainer = null
 
 var _closing := false
 var _hints: ControlHints = null
@@ -81,13 +91,20 @@ static func _get_gradient() -> GradientTexture2D:
 
 
 func _input(event: InputEvent) -> void:
-	if not allow_back or _closing or not is_visible_in_tree() or UI.has_modal():
+	if _closing or not is_visible_in_tree() or UI.has_modal():
 		return
 	if UI.get_active_context() != self:
 		return
-	if event.is_action_pressed(&"ui_cancel", false, true):
+	if allow_back and event.is_action_pressed(&"ui_cancel", false, true):
 		accept_event()
 		request_back()
+	elif has_sections() and (event.is_action_pressed(&"ui_focus_next", false, true)
+			or event.is_action_pressed(&"ui_focus_prev", false, true)):
+		var focus := get_viewport().gui_get_focus_owner()
+		if focus is LineEdit or focus is TextEdit:
+			return
+		accept_event()
+		next_section(1 if event.is_action(&"ui_focus_next", true) else -1)
 
 
 ## Plays the close animation and emits `back`. Screens with extra work to do before
@@ -120,10 +137,50 @@ func _play_open() -> void:
 	var _step2 := tween.tween_property(self, "modulate:a", 1.0, 0.16)
 
 
+## True when the screen has sections for ui_focus_next / ui_focus_prev.
+func has_sections() -> bool:
+	return section_tabs != null or focus_groups.size() > 1
+
+
+## Moves the focus to the next (step 1) or previous (step -1) section, or switches tab.
+func next_section(step: int) -> void:
+	if section_tabs:
+		var count := section_tabs.get_tab_count()
+		if count > 1:
+			section_tabs.current_tab = wrapi(section_tabs.current_tab + step, 0, count)
+			UI.play("click")
+			_focus_first_in.call_deferred(section_tabs.get_current_tab_control())
+		return
+	var groups: Array[Control] = []
+	for group in focus_groups:
+		if is_instance_valid(group) and group.is_visible_in_tree() \
+				and UI.find_first_focusable(group) != null:
+			groups.append(group)
+	if groups.size() < 2:
+		return
+	var current := -1
+	var focus := get_viewport().gui_get_focus_owner()
+	for i in groups.size():
+		if focus and (groups[i] == focus or groups[i].is_ancestor_of(focus)):
+			current = i
+			break
+	var target := groups[wrapi(current + step, 0, groups.size())] if current >= 0 \
+			else groups[0 if step > 0 else groups.size() - 1]
+	_focus_first_in(target)
+
+
+func _focus_first_in(root: Control) -> void:
+	if root == null:
+		return
+	var target := UI.find_first_focusable(root)
+	if target:
+		target.grab_focus()
+
+
 func grab_initial_focus(force := false) -> void:
 	if not is_inside_tree() or not is_visible_in_tree():
 		return
-	if not force and UI.is_using_mouse():
+	if not force and not UI.wants_focus():
 		return
 	if UI.get_active_context() != self:
 		return
@@ -147,7 +204,7 @@ func open_submenu(packed: PackedScene, hide_node: CanvasItem, parent: Node = sel
 	sub.queue_free()
 	hide_node.visible = true
 	await get_tree().process_frame
-	if is_instance_valid(opener) and opener.is_visible_in_tree() and not UI.is_using_mouse():
+	if is_instance_valid(opener) and opener.is_visible_in_tree() and UI.wants_focus():
 		UI.mute_for(0.12)
 		opener.grab_focus()
 

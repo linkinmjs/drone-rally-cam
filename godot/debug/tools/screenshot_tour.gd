@@ -84,9 +84,24 @@ func _ready() -> void:
 	await _frames(10)
 	await _capture("04b_pilot_view")
 	stage.open_pause_menu()
+	# Shown as with a gamepad: focus ring and the pad's buttons in the footer.
+	UI.set_input_kind(UI.InputKind.GAMEPAD)
 	await _frames(30)
-	await _capture("08_pause_menu")
 	var pause := stage.pause_menu
+	pause.grab_initial_focus(true)
+	await _frames(5)
+	await _capture("08_pause_menu")
+	# Restart asks first; Confirm is one D-pad press away.
+	pause.button_restart.grab_focus()
+	pause._on_restart_pressed()
+	await _frames(20)
+	var overlay := _find_confirm_overlay()
+	if overlay:
+		overlay.get("_button_ok").grab_focus()
+		await _frames(5)
+		await _capture("08b_confirm_overlay")
+		overlay.call("_close", false)
+		await _frames(20)
 	pause._on_options_pressed()
 	await _frames(20)
 	var options := _find_screen(pause, "res://gui/options_menu/options_menu.gd")
@@ -177,6 +192,13 @@ func _isolate_settings() -> void:
 	QuadSettings.reset_quad()
 	QuadSettings.control_profile = ControlProfile.new()
 	QuadSettings.settings_updated.emit()
+
+
+func _find_confirm_overlay() -> ConfirmOverlay:
+	for node in get_tree().root.find_children("*", "Control", true, false):
+		if node is ConfirmOverlay:
+			return node as ConfirmOverlay
+	return null
 
 
 func _find_screen(root: Node, script_path: String) -> MenuScreen:

@@ -1,0 +1,3 @@
+# Local builds (the CI makes its own)
+/builds/*
+!/builds/.gitkeep

@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://cdihf8jlkmulq"]
+
+[ext_resource type="Script" uid="uid://dkhe6pl6kwr6v" path="res://gui/options_menu/game_settings_menu.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://be6l02nphlj5e" path="res://gui/options_menu/hud_config.tscn" id="3"]
+
+[node name="GameSettingsMenu" type="MarginContainer"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"Card"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "GAME_TITLE"
+
+[node name="TabContainer" type="TabContainer" parent="PanelContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Gameplay" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+theme_override_constants/separation = 14
+metadata/_tab_index = 0
+
+[node name="SectionInterface" type="Label" parent="PanelContainer/VBoxContainer/TabContainer/Gameplay"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "GAME_SECTION_INTERFACE"
+
+[node name="NavRow" type="HBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer/Gameplay"]
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 24
+
+[node name="NavLabel" type="Label" parent="PanelContainer/VBoxContainer/TabContainer/Gameplay/NavRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "GAME_STICK_NAVIGATION"
+
+[node name="NavOptions" type="OptionButton" parent="PanelContainer/VBoxContainer/TabContainer/Gameplay/NavRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+
+[node name="NavHelp" type="Label" parent="PanelContainer/VBoxContainer/TabContainer/Gameplay"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"CaptionLabel"
+text = "GAME_STICK_NAVIGATION_HELP_BETAFLIGHT"
+autowrap_mode = 3
+
+[node name="HUD" type="VBoxContainer" parent="PanelContainer/VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="HUDConfig" parent="PanelContainer/VBoxContainer/TabContainer/HUD" instance=ExtResource("3")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Footer" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="ButtonBack" type="Button" parent="PanelContainer/VBoxContainer/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"GhostButton"
+text = "UI_BACK"

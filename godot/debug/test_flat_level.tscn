@@ -1,0 +1,72 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://debug/test_flat_level.gd" id="1_level"]
+[ext_resource type="Material" path="res://Assets/grid_material.tres" id="2_grid"]
+[ext_resource type="PackedScene" path="res://car/rally_car.tscn" id="3_car"]
+[ext_resource type="PackedScene" path="res://drone/drones/rally_drone.tscn" id="4_drone"]
+[ext_resource type="Script" path="res://drone/radio_controller.gd" id="5_radio"]
+[ext_resource type="Script" path="res://filming/recorder.gd" id="6_recorder"]
+[ext_resource type="PackedScene" path="res://debug/cameras/follow_camera.tscn" id="7_follow"]
+[ext_resource type="PackedScene" path="res://ui/drone_visor.tscn" id="8_visor"]
+[ext_resource type="PackedScene" path="res://ui/clip_summary.tscn" id="9_summary"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_test"]
+
+[sub_resource type="Sky" id="Sky_test"]
+sky_material = SubResource("SkyMaterial_test")
+
+[sub_resource type="Environment" id="Environment_test"]
+background_mode = 2
+sky = SubResource("Sky_test")
+ambient_light_source = 3
+tonemap_mode = 3
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+size = Vector2(600, 600)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(600, 1, 600)
+
+[node name="TestFlatLevel" type="Node3D"]
+script = ExtResource("1_level")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_test")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.819152, -0.303949, 0.48642, 0, 0.848048, 0.529919, -0.573576, 0.434084, -0.69468, 0, 30, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("PlaneMesh_floor")
+surface_material_override/0 = ExtResource("2_grid")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="RallyCar" parent="." instance=ExtResource("3_car")]
+
+[node name="RallyDrone" parent="." instance=ExtResource("4_drone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="RadioController" type="Node" parent="."]
+script = ExtResource("5_radio")
+target_path = NodePath("../RallyDrone")
+
+[node name="Recorder" type="Node" parent="."]
+script = ExtResource("6_recorder")
+
+[node name="FollowCamera" parent="." instance=ExtResource("7_follow")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 4)
+target = NodePath("../RallyDrone")
+target_distance = 3.0
+target_offset = Vector3(0, 0.5, 0)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="DroneVisor" parent="UI" instance=ExtResource("8_visor")]
+
+[node name="ClipSummary" parent="UI" instance=ExtResource("9_summary")]

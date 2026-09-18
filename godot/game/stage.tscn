@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/stage.gd" id="1_stage"]
+[ext_resource type="PackedScene" path="res://world/stages/stage_01.tscn" id="2_world"]
+[ext_resource type="PackedScene" path="res://player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://drone/drones/rally_drone.tscn" id="4_drone"]
+[ext_resource type="Script" path="res://drone/radio_controller.gd" id="5_radio"]
+[ext_resource type="Script" path="res://filming/recorder.gd" id="6_recorder"]
+[ext_resource type="Script" path="res://game/control_state.gd" id="7_control"]
+[ext_resource type="PackedScene" path="res://ui/stage_hud.tscn" id="8_hud"]
+[ext_resource type="PackedScene" path="res://ui/drone_visor.tscn" id="9_visor"]
+[ext_resource type="PackedScene" path="res://ui/clip_summary.tscn" id="10_summary"]
+[ext_resource type="Script" path="res://ui/tablet.gd" id="11_tablet"]
+
+[node name="Stage" type="Node3D"]
+script = ExtResource("1_stage")
+
+[node name="World" parent="." instance=ExtResource("2_world")]
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+
+[node name="RallyDrone" parent="." instance=ExtResource("4_drone")]
+
+[node name="RadioController" type="Node" parent="."]
+script = ExtResource("5_radio")
+target_path = NodePath("../RallyDrone")
+enabled = false
+
+[node name="Recorder" type="Node" parent="."]
+script = ExtResource("6_recorder")
+
+[node name="ControlState" type="Node" parent="."]
+script = ExtResource("7_control")
+player_path = NodePath("../Player")
+drone_path = NodePath("../RallyDrone")
+radio_path = NodePath("../RadioController")
+recorder_path = NodePath("../Recorder")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="StageHud" parent="UI" instance=ExtResource("8_hud")]
+
+[node name="DroneVisor" parent="UI" instance=ExtResource("9_visor")]
+visible = false
+
+[node name="ClipSummary" parent="UI" instance=ExtResource("10_summary")]
+
+[node name="Tablet" type="PanelContainer" parent="UI"]
+script = ExtResource("11_tablet")
+
+[node name="Menus" type="CanvasLayer" parent="."]
+layer = 10

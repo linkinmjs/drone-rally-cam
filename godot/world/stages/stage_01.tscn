@@ -1,0 +1,65 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://world/stage_world.gd" id="1_world"]
+[ext_resource type="Script" path="res://world/stage_builder.gd" id="2_builder"]
+[ext_resource type="PackedScene" path="res://car/rally_car.tscn" id="3_car"]
+[ext_resource type="Material" path="res://world/materials/terrain.tres" id="4_terrain"]
+[ext_resource type="Material" path="res://world/materials/road.tres" id="5_road"]
+[ext_resource type="Material" path="res://world/materials/trunk.tres" id="6_trunk"]
+[ext_resource type="Material" path="res://world/materials/foliage.tres" id="7_foliage"]
+[ext_resource type="Material" path="res://world/materials/rock.tres" id="8_rock"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_day"]
+sky_top_color = Color(0.25, 0.43, 0.7, 1)
+sky_horizon_color = Color(0.68, 0.72, 0.75, 1)
+ground_bottom_color = Color(0.18, 0.2, 0.16, 1)
+ground_horizon_color = Color(0.68, 0.72, 0.75, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="Sky_day"]
+sky_material = SubResource("SkyMaterial_day")
+
+[sub_resource type="Environment" id="Environment_day"]
+background_mode = 2
+sky = SubResource("Sky_day")
+ambient_light_source = 3
+reflected_light_source = 2
+tonemap_mode = 3
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.4
+fog_enabled = true
+fog_light_color = Color(0.68, 0.73, 0.78, 1)
+fog_density = 0.0005
+fog_sky_affect = 0.2
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0025
+volumetric_fog_length = 96.0
+
+[node name="Stage01" type="Node3D"]
+script = ExtResource("1_world")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_day")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.819152, -0.303949, 0.48642, 0, 0.848048, 0.529919, -0.573576, 0.434084, -0.69468, 0, 60, 0)
+light_color = Color(1, 0.95, 0.86, 1)
+light_energy = 1.2
+shadow_enabled = true
+directional_shadow_max_distance = 250.0
+
+[node name="StageBuilder" type="Node3D" parent="."]
+script = ExtResource("2_builder")
+road_points = PackedVector2Array(-320, -300, -260, -290, -190, -270, -140, -225, -125, -160, -150, -95, -160, -30, -110, 25, -40, 35, 20, -5, 80, -45, 145, -30, 185, 30, 160, 95, 95, 120, 45, 165, 60, 230, 130, 265, 215, 255, 300, 290)
+terrain_material = ExtResource("4_terrain")
+road_material = ExtResource("5_road")
+trunk_material = ExtResource("6_trunk")
+foliage_material = ExtResource("7_foliage")
+rock_material = ExtResource("8_rock")
+clearings = Array[NodePath]([NodePath("../PlayerSpawn")])
+
+[node name="RallyCar" parent="." instance=ExtResource("3_car")]
+
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0, 80)

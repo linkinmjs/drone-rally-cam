@@ -1,0 +1,180 @@
+[gd_scene format=3 uid="uid://cmn8s6qwptgio"]
+
+[ext_resource type="Script" uid="uid://bv0x5c6fe7qlx" path="res://hud/hud.gd" id="1"]
+[ext_resource type="Theme" uid="uid://cf465axlen6ii" path="res://hud/hud_theme.tres" id="1_58pmy"]
+[ext_resource type="Script" path="res://hud/hud_horizon.gd" id="2_horizon"]
+[ext_resource type="Script" path="res://hud/hud_side_tapes.gd" id="3_tapes"]
+[ext_resource type="Script" path="res://hud/hud_compass_tape.gd" id="4_compass"]
+[ext_resource type="Script" path="res://hud/hud_readouts.gd" id="5_readouts"]
+[ext_resource type="PackedScene" uid="uid://cafsfktiu47r2" path="res://hud/hud_stick_input.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://b8fexka4crqug" path="res://hud/hud_rpm.tscn" id="7"]
+[ext_resource type="Script" path="res://hud/hud_crosshair.gd" id="8_crosshair"]
+[ext_resource type="Script" path="res://hud/hud_mode_badge.gd" id="9_badge"]
+[ext_resource type="Script" uid="uid://wilw4qwp6at3" path="res://hud/hud_status.gd" id="10"]
+[ext_resource type="Script" path="res://hud/hud_rec_indicator.gd" id="11_rec"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_58pmy")
+script = ExtResource("1")
+
+[node name="HUDSideTapes" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_tapes")
+
+[node name="HUDHorizon" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_horizon")
+
+[node name="Crosshair" type="Control" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_crosshair")
+
+[node name="HUDCompass" type="Control" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(468, 96)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -234.0
+offset_top = 132.0
+offset_right = 234.0
+offset_bottom = 228.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("4_compass")
+
+[node name="HUDModeBadge" type="Control" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 56)
+layout_mode = 1
+offset_left = 28.0
+offset_top = 84.0
+offset_right = 248.0
+offset_bottom = 140.0
+mouse_filter = 2
+script = ExtResource("9_badge")
+
+[node name="HUDReadouts" type="Control" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 340)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -288.0
+offset_top = 84.0
+offset_right = -28.0
+offset_bottom = 424.0
+grow_horizontal = 0
+mouse_filter = 2
+script = ExtResource("5_readouts")
+
+[node name="HUDStatus" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = 60.0
+offset_right = 300.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "HUD_STATUS_DISARMED"
+horizontal_alignment = 1
+script = ExtResource("10")
+
+[node name="HUDSticks" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -196.0
+offset_right = 140.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="HUDStickLeft" parent="HUDSticks" instance=ExtResource("6")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HUDStickRight" parent="HUDSticks" instance=ExtResource("6")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HUDRec" type="Control" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -84.0
+offset_right = 188.0
+offset_bottom = -40.0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("11_rec")
+
+[node name="HUDRPM" parent="." instance=ExtResource("7")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -90.0
+offset_right = -170.0
+offset_bottom = -90.0
+grow_horizontal = 0
+grow_vertical = 0

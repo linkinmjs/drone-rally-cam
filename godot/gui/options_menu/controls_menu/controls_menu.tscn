@@ -1,0 +1,212 @@
+[gd_scene format=3 uid="uid://cn3o4yjkli5pt"]
+
+[ext_resource type="PackedScene" uid="uid://drev3v3v5smfq" path="res://gui/options_menu/controls_menu/controls_menu_radio_transmitter.tscn" id="1"]
+[ext_resource type="Script" uid="uid://dry2vdnnjax8t" path="res://gui/options_menu/controls_menu/controls_menu.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://ban68gsplyec1" path="res://gui/options_menu/controls_menu/controls_menu_drone.tscn" id="4"]
+
+[node name="ControlsMenu" type="MarginContainer"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2")
+
+[node name="Columns" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="ControllerPanel" type="PanelContainer" parent="Columns"]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="ControllerScroll" type="ScrollContainer" parent="Columns/ControllerPanel"]
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="ControllerVBox" type="VBoxContainer" parent="Columns/ControllerPanel/ControllerScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "CTRL_TITLE"
+
+[node name="LabelController" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "CTRL_ACTIVE_CONTROLLER"
+vertical_alignment = 2
+
+[node name="ControllerList" type="OptionButton" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ControllerCheckButton" type="CheckButton" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "CTRL_DEFAULT_CONTROLLER"
+
+[node name="LabelDeadzone" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "CTRL_DEADZONE"
+vertical_alignment = 2
+
+[node name="DeadzoneRow" type="HBoxContainer" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="DeadzoneSlider" type="HSlider" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox/DeadzoneRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 0.25
+step = 0.01
+value = 0.08
+
+[node name="DeadzoneValue" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox/DeadzoneRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = "8 %"
+horizontal_alignment = 2
+
+[node name="DeadzoneHelp" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "CTRL_DEADZONE_HELP"
+autowrap_mode = 3
+
+[node name="LabelAxes" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "CTRL_AXES"
+vertical_alignment = 2
+
+[node name="AxesList" type="VBoxContainer" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LabelButtons" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "CTRL_BUTTONS"
+vertical_alignment = 2
+
+[node name="ButtonGrid" type="GridContainer" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 8
+
+[node name="Center" type="VBoxContainer" parent="Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Columns/Center"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="SubViewport" type="SubViewport" parent="Columns/Center/SubViewportContainer"]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(640, 360)
+render_target_update_mode = 4
+
+[node name="RadioTransmitter" parent="Columns/Center/SubViewportContainer/SubViewport" instance=ExtResource("1")]
+unique_name_in_owner = true
+
+[node name="MenuPanel" type="HBoxContainer" parent="Columns/Center"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ButtonCalibrate" type="Button" parent="Columns/Center/MenuPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "CTRL_CALIBRATE"
+
+[node name="ButtonReset" type="Button" parent="Columns/Center/MenuPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DangerButton"
+text = "CTRL_RESET"
+
+[node name="ButtonBack" type="Button" parent="Columns/Center/MenuPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"GhostButton"
+text = "UI_BACK"
+
+[node name="BindingsPanel" type="PanelContainer" parent="Columns"]
+custom_minimum_size = Vector2(470, 0)
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="BindingsVBox" type="VBoxContainer" parent="Columns/BindingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DroneViewport" type="SubViewportContainer" parent="Columns/BindingsPanel/BindingsVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SubViewport" type="SubViewport" parent="Columns/BindingsPanel/BindingsVBox/DroneViewport"]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(360, 200)
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" parent="Columns/BindingsPanel/BindingsVBox/DroneViewport/SubViewport" instance=ExtResource("4")]
+
+[node name="LabelActions" type="Label" parent="Columns/BindingsPanel/BindingsVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "CTRL_BINDINGS"
+vertical_alignment = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Columns/BindingsPanel/BindingsVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="ActionsMargin" type="MarginContainer" parent="Columns/BindingsPanel/BindingsVBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="ActionsVBox" type="VBoxContainer" parent="Columns/BindingsPanel/BindingsVBox/ScrollContainer/ActionsMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14

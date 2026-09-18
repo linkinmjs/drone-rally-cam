@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/results_screen.gd" id="1_script"]
+
+[node name="ResultsScreen" type="MarginContainer"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="MenuColumn" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "Etapa terminada"
+
+[node name="Subtitle" type="Label" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SubtitleLabel"
+
+[node name="Spacer" type="Control" parent="MenuColumn"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="ClipList" type="VBoxContainer" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Spacer2" type="Control" parent="MenuColumn"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="ButtonRestart" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_RESTART_STAGE"
+alignment = 0
+
+[node name="ButtonQuit" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_QUIT"
+alignment = 0

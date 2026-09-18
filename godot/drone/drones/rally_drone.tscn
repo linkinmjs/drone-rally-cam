@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://drpyo8j7v14s4" path="res://drone/drones/drone1.tscn" id="1_base"]
+[ext_resource type="Script" path="res://drone/gimbal.gd" id="3_gimbal"]
+[ext_resource type="Script" path="res://drone/battery.gd" id="4_battery"]
+[ext_resource type="Script" path="res://drone/crash_sensor.gd" id="5_crash"]
+[ext_resource type="Script" path="res://player/interactable.gd" id="6_interact"]
+[ext_resource type="Script" path="res://drone/pilot_camera.gd" id="7_pilot_camera"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
+radius = 0.4
+
+[node name="RallyDrone" instance=ExtResource("1_base")]
+collision_layer = 2
+collision_mask = 5
+mass = 0.73
+can_sleep = false
+contact_monitor = true
+max_contacts_reported = 4
+
+[node name="Gimbal" type="Node3D" parent="."]
+script = ExtResource("3_gimbal")
+
+[node name="Camera3D" type="Camera3D" parent="Gimbal"]
+fov = 70.0
+near = 0.03
+far = 3000.0
+
+[node name="PilotCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.939693, -0.34202, 0, 0.34202, 0.939693, 0, 0.0046, -0.0627)
+near = 0.03
+far = 3000.0
+script = ExtResource("7_pilot_camera")
+
+[node name="Battery" type="Node" parent="."]
+script = ExtResource("4_battery")
+
+[node name="CrashSensor" type="Node" parent="."]
+script = ExtResource("5_crash")
+
+[node name="PickupZone" type="Area3D" parent="."]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+script = ExtResource("6_interact")
+prompt = "Guardar el dron"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PickupZone"]
+shape = SubResource("SphereShape3D_pickup")

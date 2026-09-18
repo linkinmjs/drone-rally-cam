@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://bsk1mpj5na1ou"]
+
+[ext_resource type="Script" uid="uid://dfuw6ecldhd6c" path="res://gui/pause_menu.gd" id="2"]
+
+[node name="PauseMenu" type="MarginContainer"]
+process_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2")
+
+[node name="MenuColumn" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuColumn"]
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "MENU_PAUSED"
+
+[node name="Subtitle" type="Label" parent="MenuColumn"]
+layout_mode = 2
+theme_type_variation = &"SubtitleLabel"
+text = "MENU_PAUSED_HINT"
+
+[node name="Spacer" type="Control" parent="MenuColumn"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="ButtonResume" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_RESUME"
+alignment = 0
+
+[node name="ButtonQuad" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_QUAD_SETTINGS"
+alignment = 0
+
+[node name="ButtonOptions" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_OPTIONS"
+alignment = 0
+
+[node name="ButtonHelp" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_HELP"
+alignment = 0
+
+[node name="ButtonRestart" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_RESTART_STAGE"
+alignment = 0
+
+[node name="ButtonQuit" type="Button" parent="MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_QUIT"
+alignment = 0

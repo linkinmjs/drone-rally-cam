@@ -18,7 +18,7 @@ La segunda iteración suma lo que faltaba para entender el juego y volar como en
 
 - **Tablet con el mapa.** Muestra el camino, dónde estás vos, el dron y el auto, y cuándo llega el auto a tu punto. Se abre sola al empezar con el briefing.
 - **Radio y checklist.** La radio avisa la largada, los parciales, la cuenta regresiva hasta tu punto con beeps y cuando el auto pasó. La checklist marca el paso actual.
-- **Visor de vuelo del simulador.** Sticks en pantalla, horizonte, altura, velocidad, modo de vuelo y estado ARMADO / DESARMADO, con presets Cine, Piloto y Completo.
+- **Visor del dron.** Pensado para filmar y ordenado en regiones fijas que no se superponen: REC, cámara en vista, modo y estado arriba a la izquierda; una sola línea de avisos y la radio arriba al centro; batería y lecturas (altura sobre el suelo, velocidad, velocidad vertical, distancia, gimbal y rumbo) arriba a la derecha; horizonte real de la cámara en el centro; guía o puntaje y sticks abajo. Presets Cine, Piloto y Completo, con vista previa en Opciones > Juego y HUD.
 - **Vista de piloto.** Una cámara FPV fija al chasis que muestra cómo se inclina el dron. Se alterna con la del gimbal, que es la que graba.
 - **Puntaje legible.** Barras en vivo con un consejo mientras grabás, resumen con el motivo de cada aspecto y pantalla de resultados al final.
 - **Guía de pilotaje.** Dice qué hacer en cada momento (armar, despegar, encuadrar, grabar, aterrizar) y dónde poner el acelerador.
@@ -79,7 +79,7 @@ Requiere **Godot 4.7** con el renderer Forward+. El proyecto está en la carpeta
 | `godot/player/` | Jugador en primera persona, maleta e interactuables |
 | `godot/game/` | Etapa y máquina de estados de control |
 | `godot/ui/` | Visor del dron, HUD de la etapa, tablet y mapa, radio, guía, resumen y resultados |
-| `godot/hud/` | HUD de vuelo tomado del simulador (sticks, horizonte, lecturas, modo, estado) |
+| `godot/hud/` | Capa de vuelo del visor, derivada del simulador (horizonte, mira, lecturas, chip de modo y estado, sticks) |
 | `godot/gui/` | Menús tomados del simulador: pausa, opciones, controles y calibración, ajustes del dron, ayuda y theme |
 | `godot/localization/` | Textos de los menús y el HUD en español e inglés |
 | `godot/autoloads/` | `Controls`, `EventBus`, `Audio`, `GameSettings`, `QuadSettings`, `UI` y `StickNavigation` |
@@ -94,7 +94,7 @@ Estos son los valores de diseño que más conviene tocar al probar:
 
 ## Chequeos automáticos
 
-Hay catorce chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
+Hay quince chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
 
 - **Carga:** todos los recursos del juego cargan sin errores.
 - **Dron:** vuelo, respuesta y frenado del Estabilizado, choque, despegue en pendiente, aterrizaje y recuperación.
@@ -110,6 +110,7 @@ Hay catorce chequeos que corren sin ventana. Usan su propia carpeta de configura
 - **Información de la etapa:** mapa, cuenta regresiva, radio, checklist y marcador del dron.
 - **Puntaje en pantalla:** consejos, motivos, guía de pilotaje y resultados.
 - **Menús con mando:** foco al pausar, una sola ✕ alcanza, Confirmar alcanzable en el diálogo, sticks que solo navegan, reanudar sin colgarse, L1/R1 por sección, glifos del mando y calibración que conserva el teclado.
+- **Visor:** horizonte real en la vista gimbal, altura y velocidad vertical correctas, modos tortuga y lanzamiento, avisos con prioridad (choque y toma perdida en uno solo), sin superposiciones con ningún preset ni resolución, atajos que no se rearman cada frame y vista previa de Opciones igual al visor.
 
 ```sh
 godot --headless --path godot --import

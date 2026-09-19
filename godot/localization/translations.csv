@@ -133,26 +133,21 @@ While recording, every frame measures four things:
 Anything hiding the car (trees, terrain) lowers the frame. The clip grade: S with an average of 0.85 or more and at least 3 good seconds in a row; A from 0.70; B from 0.50; C otherwise or for clips under 1.5 seconds. While recording, the viewfinder bars show each measure live with a tip."
 HELP_TITLE,Ayuda,Help
 HUD_ALT,ALT,ALT
-HUD_ALTITUDE,Altura,Altitude
+HUD_ALTITUDE,Altura y velocidad vertical,Height and vertical speed
 HUD_CAR_MARKER,Marcador del auto,Car marker
-HUD_COMPASS,Brújula,Compass
-HUD_COMPASS_E,E,E
-HUD_COMPASS_N,N,N
-HUD_COMPASS_NE,NE,NE
-HUD_COMPASS_NW,NO,NW
-HUD_COMPASS_S,S,S
-HUD_COMPASS_SE,SE,SE
-HUD_COMPASS_SW,SO,SW
-HUD_COMPASS_W,O,W
 HUD_COMPONENTS,ELEMENTOS,ELEMENTS
 HUD_CROSSHAIR,Mira,Crosshair
 HUD_DIST,DIST,DIST
+HUD_DISTANCE,Distancia al piloto,Distance to the pilot
 HUD_FLIGHT_MODE,Modo de vuelo,Flight mode
 HUD_GIMBAL,GMB,GMB
+HUD_GIMBAL_TILT,Inclinación del gimbal,Gimbal tilt
+HUD_HDG,RUMBO,HDG
+HUD_HEADING,Rumbo,Heading
 HUD_HORIZON,Línea de horizonte,Horizon line
 HUD_HORIZON_ATTITUDE,Actitud del dron,Drone attitude
 HUD_HORIZON_CAMERA,Real (cámara),Real (camera)
-HUD_HORIZON_MODE,Horizonte,Horizon
+HUD_HORIZON_MODE,Horizonte en vista piloto,Horizon in pilot view
 HUD_LADDER,Escalera de cabeceo,Pitch ladder
 HUD_MODE_ACRO,ACRO,ACRO
 HUD_MODE_HORIZON,ACTITUD,ATTITUDE
@@ -168,10 +163,7 @@ HUD_PRESET_CINE,Cine,Cinema
 HUD_PRESET_CUSTOM,Personalizado,Custom
 HUD_PRESET_FULL,Completo,Full
 HUD_PRESET_PILOT,Piloto,Pilot
-HUD_REC,REC,REC
-HUD_RPM,RPM de motores,Motor RPM
 HUD_SCORE_BARS,Barras de puntaje al grabar,Score bars while recording
-HUD_SIDE_TAPES,Cintas laterales,Side tapes
 HUD_SPD,VEL,SPD
 HUD_SPEED,Velocidad,Speed
 HUD_STATUS_ARMED,ARMADO,ARMED
@@ -182,11 +174,11 @@ HUD_STATUS_RECOVERY,RECUPERACIÓN TRAS CHOQUE,CRASH RECOVERY
 HUD_STATUS_RECOVERY_MODE,MODO RECUPERACIÓN,CRASH RECOVERY MODE
 HUD_STATUS_THROTTLE_HIGH,ACELERADOR ABAJO PARA ARMAR,THROTTLE DOWN TO ARM
 HUD_STATUS_THROTTLE_TO_CENTER,ACELERADOR AL CENTRO PARA ARMAR,CENTER THE THROTTLE TO ARM
-HUD_STATUS_TOGGLE,"Estado (armado, errores)","Status (armed, errors)"
+HUD_STATUS_TOGGLE,"Estado (armado, desarmado)","State (armed, disarmed)"
 HUD_STATUS_TURTLE,MODO TORTUGA,TURTLE MODE
 HUD_STICKS,Visor de sticks,Stick display
-HUD_THIRDS,Grilla de tercios al grabar,Rule of thirds grid while recording
-HUD_UNIT_DEG,grados,degrees
+HUD_THIRDS,Grilla de tercios (vista gimbal),Rule of thirds grid (gimbal view)
+HUD_UNIT_DEG_SHORT,°,°
 HUD_UNIT_KMH,km/h,km/h
 HUD_UNIT_M,m,m
 HUD_UNIT_MPS,m/s,m/s

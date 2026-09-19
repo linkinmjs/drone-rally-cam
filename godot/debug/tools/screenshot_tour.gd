@@ -141,6 +141,19 @@ func _ready() -> void:
 	await _frames(20)
 	await _capture("04c_clip_summary")
 
+	# 4d. Every HUD element on (preset Completo) while recording.
+	stage.summary.hide()
+	GameSettings.apply_hud_preset(GameSettings.HudPreset.FULL)
+	stage.recorder.start()
+	await _frames(20)
+	await _capture("04d_visor_full")
+	# 4e. A crash that loses the clip: one alert on the message line.
+	EventBus.drone_crashed.emit(stage.drone, 9.0)
+	await _frames(10)
+	await _capture("04e_visor_alert")
+	GameSettings.reset_to_defaults()
+	await _frames(5)
+
 	# 5. High wide shot of the stage.
 	var camera := Camera3D.new()
 	camera.far = 4000.0

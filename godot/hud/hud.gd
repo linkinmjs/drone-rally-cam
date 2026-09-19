@@ -1,53 +1,53 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: draws for any Camera3D (pilot or
-# gimbal), no race track or gate marker, the game's HUD settings keys.
-extends Control
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: thin flight layer of
+# the viewfinder. Horizon for any Camera3D (the gimbal view draws the real horizon), vertical
+# speed over the real averaging window, horizontal speed, heading as a number, armed state in
+# the mode chip; no side tapes, compass tape, RPM table or REC indicator.
 class_name HUD
-## In-flight OSD. Orientation aids (horizon, compass, side tapes, next gate) follow the camera
-## every frame; numeric values refresh at the "numbers rate" of the HUD settings so they stay
-## readable. The data pipeline (`update_data`) and `show_component` are unchanged.
+extends Control
+## Flight layer of the viewfinder. It draws the horizon and the crosshair over the whole view
+## and owns the components the viewfinder places in its layout: the readouts column, the mode
+## chip and the two sticks, plus the armed state (`status`). Orientation aids follow the
+## camera every frame; the numbers refresh at the "numbers rate" of the HUD settings.
 
 
-enum Component {CROSSHAIR, STATUS, HEADING, SPEED, ALTITUDE, LADDER, HORIZON, STICKS, RPM,
-		FLIGHT_MODE, REC, SIDE_TAPES}
+enum Component {CROSSHAIR, STATUS, HEADING, SPEED, ALTITUDE, LADDER, HORIZON, STICKS,
+		FLIGHT_MODE, DISTANCE, GIMBAL}
 
-## HUD settings keys handled here (the rest of `GameSettings.hud_config` belongs to the viewfinder).
-const OWN_KEYS: Array[String] = ["crosshair", "horizon", "ladder", "speed", "altitude", "heading",
-		"sticks", "rpm", "flight_mode", "status", "side_tapes"]
+## HUD settings keys handled here (the rest of `GameSettings.hud_config` belongs to the
+## viewfinder).
+const OWN_KEYS: Array[String] = ["crosshair", "horizon", "ladder", "speed", "altitude",
+		"heading", "sticks", "flight_mode", "status", "distance", "gimbal"]
+const STICK_SIZE := 96.0
+const STATE_COLORS := {
+	HUDStatus.Status.DISARMED: HudStyle.AMBER,
+	HUDStatus.Status.ARMED: HudStyle.GREEN,
+	HUDStatus.Status.LAUNCH: HudStyle.AMBER,
+	HUDStatus.Status.TURTLE: HudStyle.AMBER,
+	HUDStatus.Status.RECOVERY: HudStyle.RED,
+}
 
-# HUD components
-@onready var crosshair := %Crosshair as HUDCrosshair
-@onready var horizon := %HUDHorizon as HUDHorizon
-@onready var side_tapes := %HUDSideTapes as HUDSideTapes
-@onready var compass := %HUDCompass as HUDCompassTape
-@onready var readouts := %HUDReadouts as HUDReadouts
-@onready var mode_badge := %HUDModeBadge as HUDModeBadge
-@onready var rec_indicator := %HUDRec as HUDRecIndicator
-@onready var sticks := %HUDSticks as Control
-@onready var stick_left := %HUDStickLeft as HUDStickInput
-@onready var stick_right := %HUDStickRight as HUDStickInput
-@onready var rpm_table := %HUDRPM as HUDRPM
-@onready var status := %HUDStatus as HUDStatus
+var horizon: HUDHorizon
+var crosshair: HUDCrosshair
+var readouts: HUDReadouts
+var mode_badge: HUDModeBadge
+var status: HUDStatus
+var sticks: HBoxContainer
+var stick_left: StickHint
+var stick_right: StickHint
 
-## True when the HUD is shown as a preview in the settings (no drone around it)
+## True when the HUD is a preview in the settings (no drone around it): fake flight data.
 var preview_mode := false
-## Whether the drone is recording (the REC indicator of this HUD is off in the game: the
-## viewfinder shows its own with the clip time).
-var recording := false
-## When true the horizon mode follows `forced_horizon_mode` instead of the settings (the
-## gimbal view always uses the attitude horizon: its camera never tilts with the drone).
-var forced_horizon_mode := ""
+## True in the pilot view: the horizon style follows the settings there. The gimbal view
+## always draws the real horizon of its camera.
+var pilot_view := false
+## False while there is no ground under the drone within the sensor range.
+var altitude_known := true
 
 # Flight data, averaged over the numbers refresh period
 var hud_timer := 0.1
 var hud_delta := 0.0
 var hud_position := Vector3.ZERO
-var hud_angles := Vector3.ZERO
 var hud_velocity := Vector3.ZERO
-var hud_left_stick := Vector2.ZERO
-var hud_right_stick := Vector2.ZERO
-var hud_rpm := [0.0, 0.0, 0.0, 0.0]
-var is_first := false
-var first_angles := Vector3.ZERO
 
 # Latest raw values, used every frame by the orientation aids
 var latest_position := Vector3.ZERO
@@ -55,34 +55,78 @@ var latest_angles := Vector3.ZERO
 var latest_velocity := Vector3.ZERO
 var latest_left_stick := Vector2.ZERO
 var latest_right_stick := Vector2.ZERO
+
 var _previous_altitude := 0.0
+var _has_previous_altitude := false
+var _window_altitude_known := true
 var _camera: Camera3D = null
-var _show_rec := false
 var _preview_time := 0.0
 
 
-func _ready() -> void:
+func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	horizon = HUDHorizon.new()
+	horizon.name = "HUDHorizon"
+	horizon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(horizon)
+	crosshair = HUDCrosshair.new()
+	crosshair.name = "Crosshair"
+	crosshair.custom_minimum_size = Vector2(48, 48)
+	add_child(crosshair)
+	crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
+	status = HUDStatus.new()
+	status.name = "HUDStatus"
+	add_child(status)
+
+	# Placed by the viewfinder in its layout.
+	readouts = HUDReadouts.new()
+	readouts.name = "HUDReadouts"
+	mode_badge = HUDModeBadge.new()
+	mode_badge.name = "HUDModeBadge"
+	sticks = HBoxContainer.new()
+	sticks.name = "HUDSticks"
+	sticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sticks.add_theme_constant_override("separation", int(HudStyle.GUTTER))
+	stick_left = StickHint.new()
+	stick_left.custom_minimum_size = Vector2(STICK_SIZE, STICK_SIZE)
+	sticks.add_child(stick_left)
+	stick_right = StickHint.new()
+	stick_right.custom_minimum_size = Vector2(STICK_SIZE, STICK_SIZE)
+	sticks.add_child(stick_right)
+
+
+func _ready() -> void:
+	var _discard := status.changed.connect(_on_status_changed)
+	_discard = GameSettings.hud_config_updated.connect(apply_hud_config)
 	reset_data()
-	update_data(hud_delta, hud_position, hud_angles, hud_velocity, hud_left_stick, hud_right_stick, hud_rpm)
-	var _discard := GameSettings.hud_config_updated.connect(apply_hud_config)
+	_on_status_changed()
 	apply_hud_config()
 
 
-## The camera the HUD draws the horizon and heading for.
-func set_camera(camera: Camera3D) -> void:
+func _exit_tree() -> void:
+	# The placed components live elsewhere in the tree; the ones never placed are freed here.
+	for component: Node in [readouts, mode_badge, sticks]:
+		if is_instance_valid(component) and not component.is_inside_tree():
+			component.queue_free()
+
+
+## The camera in view: the horizon and the heading are drawn for it.
+func set_camera(camera: Camera3D, is_pilot_view := false) -> void:
 	_camera = camera
 	horizon.camera = camera
+	pilot_view = is_pilot_view
+	horizon.mode = str(GameSettings.hud_config["horizon_mode"]) if pilot_view else "camera"
+	horizon.queue_redraw()
 
 
 func apply_hud_config() -> void:
 	var config := GameSettings.hud_config
 	hud_timer = 1.0 / float(config["fps"])
-	horizon.mode = forced_horizon_mode if not forced_horizon_mode.is_empty() \
-			else str(config["horizon_mode"])
+	horizon.mode = str(config["horizon_mode"]) if pilot_view else "camera"
 	for key: String in OWN_KEYS:
-		show_component(_component_for_key(key), bool(config[key]))
-	show_component(Component.REC, preview_mode)
+		show_component(_component_for_key(key), bool(config.get(key, false)))
 
 
 func _component_for_key(key: String) -> Component:
@@ -94,27 +138,10 @@ func _component_for_key(key: String) -> Component:
 		"altitude": return Component.ALTITUDE
 		"heading": return Component.HEADING
 		"sticks": return Component.STICKS
-		"rpm": return Component.RPM
 		"flight_mode": return Component.FLIGHT_MODE
 		"status": return Component.STATUS
-		"rec": return Component.REC
-		_: return Component.SIDE_TAPES
-
-
-func _process(delta: float) -> void:
-	if preview_mode:
-		_update_preview(delta)
-	_update_orientation()
-	if hud_delta >= hud_timer:
-		hud_position /= hud_delta
-		hud_angles /= hud_delta
-		hud_velocity /= hud_delta
-		hud_left_stick /= hud_delta
-		hud_right_stick /= hud_delta
-		for i in hud_rpm.size():
-			hud_rpm[i] /= hud_delta
-		update_display()
-		reset_data()
+		"distance": return Component.DISTANCE
+		_: return Component.GIMBAL
 
 
 func show_component(component: int, show_comp: bool = true) -> void:
@@ -122,15 +149,19 @@ func show_component(component: int, show_comp: bool = true) -> void:
 		Component.CROSSHAIR:
 			crosshair.visible = show_comp
 		Component.STATUS:
-			status.visible = show_comp
+			mode_badge.set_parts(mode_badge.show_mode, show_comp)
+		Component.FLIGHT_MODE:
+			mode_badge.set_parts(show_comp, mode_badge.show_state)
 		Component.HEADING:
-			compass.visible = show_comp
+			readouts.show_heading = show_comp
 		Component.SPEED:
 			readouts.show_speed = show_comp
-			readouts.queue_redraw()
 		Component.ALTITUDE:
 			readouts.show_altitude = show_comp
-			readouts.queue_redraw()
+		Component.DISTANCE:
+			readouts.show_distance = show_comp
+		Component.GIMBAL:
+			readouts.show_gimbal = show_comp
 		Component.LADDER:
 			horizon.show_ladder = show_comp
 			horizon.queue_redraw()
@@ -139,16 +170,43 @@ func show_component(component: int, show_comp: bool = true) -> void:
 			horizon.queue_redraw()
 		Component.STICKS:
 			sticks.visible = show_comp
-		Component.RPM:
-			rpm_table.visible = show_comp
-		Component.FLIGHT_MODE:
-			mode_badge.visible = show_comp
-		Component.REC:
-			_show_rec = show_comp
-		Component.SIDE_TAPES:
-			side_tapes.visible = show_comp
-	readouts.visible = readouts.show_speed or readouts.show_altitude \
-			or readouts.show_distance or readouts.show_gimbal
+	readouts.refresh_layout()
+
+
+func _process(delta: float) -> void:
+	if preview_mode:
+		_update_preview(delta)
+	_update_orientation()
+	if hud_delta >= hud_timer:
+		flush_numbers()
+
+
+## Averages the data of the finished window and refreshes the numbers.
+func flush_numbers() -> void:
+	if hud_delta <= 0.0:
+		return
+	var window := hud_delta
+	var avg_position := hud_position / window
+	var avg_velocity := hud_velocity / window
+	readouts.speed_kmh = Vector2(avg_velocity.x, avg_velocity.z).length() * 3.6
+	readouts.altitude = avg_position.y
+	readouts.altitude_known = _window_altitude_known
+	if _window_altitude_known and _has_previous_altitude:
+		readouts.vertical_speed = (avg_position.y - _previous_altitude) / window
+		readouts.vertical_speed_known = true
+	else:
+		readouts.vertical_speed_known = false
+	_previous_altitude = avg_position.y
+	_has_previous_altitude = _window_altitude_known
+	readouts.queue_redraw()
+	reset_data()
+
+
+## The height jumped (respawn, deploy): the next vertical speed must not compare against it.
+func reset_altitude() -> void:
+	_has_previous_altitude = false
+	readouts.vertical_speed_known = false
+	reset_data()
 
 
 ## Orientation aids: every frame, from the latest values and the camera transform.
@@ -161,35 +219,20 @@ func _update_orientation() -> void:
 		var flat := Vector2(forward.x, -forward.z)
 		if flat.length() > 0.08:
 			heading = rad_to_deg(atan2(flat.x, flat.y))
-	compass.heading = fposmod(heading, 360.0)
-	compass.queue_redraw()
+	readouts.heading_deg = fposmod(heading, 360.0)
 
 	horizon.pitch = latest_angles.x
 	horizon.roll = latest_angles.z
-	horizon.queue_redraw()
+	if horizon.show_horizon or horizon.show_ladder:
+		horizon.queue_redraw()
 
-	side_tapes.speed = latest_velocity.length()
-	side_tapes.altitude = latest_position.y
-	side_tapes.queue_redraw()
-
-	stick_left.update_stick_input(latest_left_stick)
-	stick_right.update_stick_input(latest_right_stick)
-
-	rec_indicator.recording = _show_rec and (preview_mode or recording)
-
-
-func update_display() -> void:
-	readouts.speed_kmh = hud_velocity.length() * 3.6
-	readouts.altitude = hud_position.y
-	if hud_delta > 0.0:
-		readouts.vertical_speed = (hud_position.y - _previous_altitude) / maxf(hud_timer, 1e-3)
-	_previous_altitude = hud_position.y
-	readouts.queue_redraw()
-	rpm_table.update_rpm(hud_rpm[0], hud_rpm[1], hud_rpm[2], hud_rpm[3])
+	if sticks.visible:
+		stick_left.set_stick(latest_left_stick)
+		stick_right.set_stick(latest_right_stick)
 
 
 func update_data(dt: float, pos: Vector3, angles: Vector3, velocity: Vector3,
-		left_stick: Vector2, right_stick: Vector2, rpm: Array) -> void:
+		left_stick: Vector2, right_stick: Vector2) -> void:
 	latest_position = pos
 	latest_angles = angles
 	latest_velocity = velocity
@@ -197,16 +240,9 @@ func update_data(dt: float, pos: Vector3, angles: Vector3, velocity: Vector3,
 	latest_right_stick = right_stick
 	hud_delta += dt
 	hud_position += dt * pos
-	if is_first:
-		first_angles = angles
-		is_first = false
-	# Adjust angles to prevent averaging issues
-	hud_angles += dt * get_adjusted_angles(angles)
 	hud_velocity += dt * velocity
-	hud_left_stick += dt * left_stick
-	hud_right_stick += dt * right_stick
-	for i in hud_rpm.size():
-		hud_rpm[i] += dt * rpm[i]
+	if not altitude_known:
+		_window_altitude_known = false
 
 
 func update_flight_mode(mode: FlightMode) -> void:
@@ -229,30 +265,14 @@ func update_flight_mode(mode: FlightMode) -> void:
 
 
 func reset_data() -> void:
-	is_first = true
-	first_angles = Vector3.ZERO
 	hud_delta = 0.0
 	hud_position = Vector3.ZERO
-	hud_angles = Vector3.ZERO
 	hud_velocity = Vector3.ZERO
-	hud_left_stick = Vector2.ZERO
-	hud_right_stick = Vector2.ZERO
-	hud_rpm = [0.0, 0.0, 0.0, 0.0]
+	_window_altitude_known = altitude_known
 
 
-func get_adjusted_angles(angles: Vector3) -> Vector3:
-	var result := angles
-	var correction := 0
-
-	for i in 3:
-		# Check sign changes by difference with PI as arbitrary threshold
-		if absf(angles[i] - first_angles[i]) > PI:
-			if first_angles[i] > 0:
-				correction = 1
-			else:
-				correction = -1
-			result[i] = angles[i] + 2 * PI * correction
-	return result
+func _on_status_changed() -> void:
+	mode_badge.set_state(status.state_key(), STATE_COLORS[status.status])
 
 
 ## Settings preview: gentle fake flight so every component can be seen.
@@ -265,5 +285,4 @@ func _update_preview(delta: float) -> void:
 	var velocity := Vector3(0, cos(t * 0.4) * 1.2, -11.5 - sin(t * 0.7) * 2.0)
 	var left := Vector2(sin(t * 0.6) * 0.3, -0.1)
 	var right := Vector2(sin(t * 0.3) * 0.4, cos(t * 0.5) * 0.3)
-	var rpm := [21000.0, 20500.0, 21400.0, 20800.0]
-	update_data(delta, pos, angles, velocity, left, right, rpm)
+	update_data(delta, pos, angles, velocity, left, right)

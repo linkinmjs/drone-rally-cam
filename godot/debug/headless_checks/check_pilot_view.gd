@@ -30,7 +30,8 @@ func run() -> void:
 	expect(control.view == ControlState.View.GIMBAL, "piloting starts on the gimbal")
 	expect(gimbal.camera.current, "the gimbal camera is current")
 	expect(visor.visible, "the viewfinder is shown while piloting")
-	expect(hud.horizon.mode == "attitude", "the gimbal view draws the attitude horizon (%s)" % hud.horizon.mode)
+	expect(hud.horizon.mode == "camera" and hud.horizon.camera == gimbal.camera,
+			"the gimbal view draws the real horizon of the gimbal camera (%s)" % hud.horizon.mode)
 	expect(hud.readouts.show_gimbal, "the gimbal view shows the gimbal tilt")
 
 	await action(&"change_camera")
@@ -79,7 +80,8 @@ func run() -> void:
 	expect(not hud.sticks.visible and not hud.readouts.visible, "the Cine preset hides sticks and numbers")
 	GameSettings.apply_hud_preset(GameSettings.HudPreset.FULL)
 	await process_frames(1)
-	expect(hud.sticks.visible and hud.rpm_table.visible, "the Full preset shows everything")
+	expect(hud.sticks.visible and hud.readouts.show_heading and hud.horizon.show_ladder,
+			"the Full preset shows everything (heading and pitch ladder included)")
 	GameSettings.reset_to_defaults()
 
 	# Letting go of the controller and taking it again starts on the gimbal.

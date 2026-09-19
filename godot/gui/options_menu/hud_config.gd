@@ -1,5 +1,5 @@
 # Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: Drone Rally Cam
-# presets and toggles (status, pilot guide, score bars, thirds, car marker).
+# presets and toggles; the preview is the real viewfinder, rendered at 1920x1080 and scaled.
 extends HBoxContainer
 ## HUD settings with a live preview. Every change is written to GameSettings.hud_config;
 ## the preview HUD (and the in-flight HUD) listen to `hud_config_updated`.
@@ -12,11 +12,11 @@ const TOGGLES := {
 	"CheckHeading": "heading",
 	"CheckSpeed": "speed",
 	"CheckAltitude": "altitude",
-	"CheckSideTapes": "side_tapes",
+	"CheckDistance": "distance",
 	"CheckFlightMode": "flight_mode",
 	"CheckStatus": "status",
 	"CheckSticks": "sticks",
-	"CheckRPM": "rpm",
+	"CheckGimbal": "gimbal",
 	"CheckPilotGuide": "pilot_guide",
 	"CheckScoreBars": "score_bars",
 	"CheckThirds": "thirds",
@@ -27,7 +27,10 @@ const TOGGLES := {
 @onready var fps_value := %ValueRefreshRate as Label
 @onready var preset := %PresetOptions as OptionButton
 @onready var horizon_mode := %HorizonModeOptions as OptionButton
-@onready var hud := %HUD as HUD
+@onready var preview := $Preview as PanelContainer
+
+## The viewfinder shown in the preview (the same one used while flying).
+var visor: DroneVisor = null
 
 var _buttons := {}
 var _updating := false
@@ -56,8 +59,29 @@ func _ready() -> void:
 		_discard = button.toggled.connect(_on_button_toggled.bind(TOGGLES[node_name]))
 
 	_refresh()
-	hud.preview_mode = true
-	hud.apply_hud_config()
+	_build_preview()
+
+
+## The viewfinder at its real resolution in a SubViewport, scaled into the preview panel, so
+## what is seen here is exactly the in-flight layout.
+func _build_preview() -> void:
+	var viewport := SubViewport.new()
+	viewport.name = "PreviewViewport"
+	viewport.size = Vector2i(1920, 1080)
+	viewport.transparent_bg = true
+	viewport.disable_3d = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(viewport)
+	visor = DroneVisor.new()
+	visor.name = "PreviewVisor"
+	viewport.add_child(visor)
+	visor.setup_preview()
+	var texture := TextureRect.new()
+	texture.texture = viewport.get_texture()
+	texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview.add_child(texture)
 
 
 func _refresh() -> void:

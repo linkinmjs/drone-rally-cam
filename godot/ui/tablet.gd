@@ -27,20 +27,17 @@ func _ready() -> void:
 	offset_right = 0.0
 	offset_top = 0.0
 	offset_bottom = 0.0
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.07, 0.93)
+	var style := HudStyle.panel(0.92, 16, 24)
 	style.border_color = Color(1, 1, 1, 0.14)
 	style.set_border_width_all(2)
-	style.set_corner_radius_all(16)
-	style.set_content_margin_all(24)
 	add_theme_stylebox_override("panel", style)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 14)
 	add_child(column)
-	_title = HudStyle.make_label("", 28)
+	_title = HudStyle.make_label("", HudStyle.SIZE_L, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_LEFT, true)
 	column.add_child(_title)
-	_briefing = HudStyle.make_label("", 20)
+	_briefing = HudStyle.make_label("", HudStyle.SIZE_S)
 	_briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_briefing)
 
@@ -57,7 +54,7 @@ func _ready() -> void:
 	_rows.add_theme_constant_override("separation", 6)
 	body.add_child(_rows)
 
-	_footer = HudStyle.make_label("", 18, HudStyle.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	_footer = HudStyle.make_label("", HudStyle.SIZE_S, HudStyle.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
 	column.add_child(_footer)
 	hide()
 
@@ -114,7 +111,7 @@ func _update_rows() -> void:
 	var rows := stage.timetable()
 	while _rows.get_child_count() < rows.size() * 2:
 		var is_title := _rows.get_child_count() % 2 == 0
-		var label := HudStyle.make_label("", 18 if is_title else 26,
+		var label := HudStyle.make_label("", HudStyle.SIZE_S if is_title else HudStyle.SIZE_L,
 				HudStyle.DIM if is_title else HudStyle.WHITE)
 		_rows.add_child(label)
 	for i in _rows.get_child_count():

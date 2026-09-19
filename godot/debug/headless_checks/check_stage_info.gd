@@ -96,7 +96,7 @@ func run() -> void:
 	note("radio: %s" % " | ".join(announcements))
 	var joined := " | ".join(announcements)
 	expect(joined.contains("Largó"), "the radio announces the start")
-	expect(joined.contains("km 0.3"), "the radio announces the split at 300 m")
+	expect(joined.contains("km %s" % HudStyle.decimal(0.3)), "the radio announces the split at 300 m")
 	expect(joined.contains("pasó por tu punto"), "the radio says the car went past")
 
 	# A delivered clip moves the checklist to landing and packing.

@@ -72,8 +72,9 @@ func _clip_row(number: int, clip: ShotReport) -> HBoxContainer:
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(column)
 	var header := Label.new()
-	header.text = "Toma %d · %s · promedio %d %% · racha %.1f s" % [number,
-			HudStyle.format_time(clip.duration), roundi(clip.mean_score * 100.0), clip.longest_streak]
+	header.text = "Toma %d · %s · promedio %d %% · racha %s" % [number,
+			HudStyle.format_duration(clip.duration), roundi(clip.mean_score * 100.0),
+			HudStyle.format_duration(clip.longest_streak)]
 	column.add_child(header)
 	var comment := Label.new()
 	comment.text = "“%s”" % clip.comment

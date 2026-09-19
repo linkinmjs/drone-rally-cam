@@ -1,33 +1,27 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: rectilinear direction projection
-# (the game has no fisheye camera).
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: rectilinear direction
+# projection (the game has no fisheye camera); colors, fonts and outline from HudStyle.
 class_name HUDDraw
 extends RefCounted
 ## Drawing helpers shared by the OSD components: white strokes with a soft dark edge so
-## they stay readable over bright sky and dark ground alike.
+## they stay readable over bright sky and dark ground alike. The look comes from HudStyle.
 
 
-const WHITE := Color(1, 1, 1, 0.96)
-const SHADOW := Color(0, 0, 0, 0.35)
-
-static var _font_bold: Font = null
-static var _font_mono: Font = null
+const WHITE := HudStyle.WHITE
+const SHADOW := HudStyle.SHADOW
 
 
 static func font_bold() -> Font:
-	if _font_bold == null:
-		_font_bold = load(UIPalette.FONT_BOLD) as Font
-	return _font_bold
+	return HudStyle.bold_font()
 
 
 static func font_mono() -> Font:
-	if _font_mono == null:
-		_font_mono = load(UIPalette.FONT_MONO) as Font
-	return _font_mono
+	return HudStyle.mono_font()
 
 
 static func text(ci: CanvasItem, font: Font, pos: Vector2, value: String, font_size: int,
 		align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0, color := WHITE) -> void:
-	ci.draw_string_outline(font, pos, value, align, width, font_size, 5, Color(SHADOW, SHADOW.a * color.a))
+	ci.draw_string_outline(font, pos, value, align, width, font_size,
+			HudStyle.outline_size(font_size), Color(HudStyle.OUTLINE, HudStyle.OUTLINE.a * color.a))
 	ci.draw_string(font, pos, value, align, width, font_size, color)
 
 

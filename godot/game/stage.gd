@@ -41,6 +41,9 @@ var race_time: float:
 var _route_offset := 0.0
 var _road_distance := INF
 var _route_timer := 0.0
+# A crash and the clip it loses arrive in the same frame (in any order): one message.
+var _pending_crash := false
+var _pending_abort := ""
 
 @onready var world := $World as StageWorld
 @onready var player := $Player as Player
@@ -66,15 +69,18 @@ func _ready() -> void:
 	visor.setup(drone, recorder, player, control)
 	visor.set_car(world.car)
 	hud.radio_feed.setup(self)
+	visor.set_radio(hud.radio_feed)
 	hud.drone_marker.target = drone
 	tablet.setup(self)
 
 	var _discard := control.state_changed.connect(_on_control_state_changed)
-	_discard = control.action_refused.connect(hud.show_notice)
+	_discard = control.action_refused.connect(notify.bind(VisorMessages.Level.WARN))
 	_discard = recorder.recording_stopped.connect(_on_recording_stopped)
-	_discard = recorder.recording_aborted.connect(hud.show_notice)
+	_discard = recorder.recording_aborted.connect(_on_recording_aborted)
 	_discard = world.car.finished.connect(_on_car_finished)
-	_discard = EventBus.battery_depleted.connect(hud.show_notice.bind("El dron se quedó sin batería."))
+	_discard = EventBus.drone_crashed.connect(_on_drone_crashed)
+	_discard = EventBus.battery_low.connect(_on_battery_low)
+	_discard = EventBus.battery_depleted.connect(_on_battery_depleted)
 
 	_countdown = start_delay
 	_on_control_state_changed(control.state)
@@ -168,15 +174,15 @@ func _process(delta: float) -> void:
 	match phase:
 		Phase.WAITING_START:
 			_countdown -= delta
-			hud.set_status("%s larga en %s" % [car.driver_name, HudStyle.format_time(ceilf(_countdown))])
+			_set_status("%s larga en %s" % [car.driver_name, HudStyle.format_time(ceilf(_countdown))])
 			if _countdown <= 0.0:
 				phase = Phase.RACING
 				car.start()
 		Phase.RACING:
 			_race_time += delta
-			hud.set_status("%s en carrera · %s" % [car.driver_name, HudStyle.format_time(_race_time)])
+			_set_status("%s en carrera · %s" % [car.driver_name, HudStyle.format_time(_race_time)])
 		Phase.FINISHED:
-			hud.set_status(_final_status())
+			_set_status(_final_status())
 			# Results once the clip being recorded (if any) is delivered.
 			if not results and _results_delay >= 0.0 and not recorder.recording:
 				_results_delay -= delta
@@ -326,12 +332,72 @@ func _update_drone_marker() -> void:
 func _on_control_state_changed(state: ControlState.State) -> void:
 	var piloting := state == ControlState.State.PILOTING
 	visor.visible = piloting
+	# The viewfinder draws the status and the radio itself while piloting.
+	hud.visible = not piloting
 	hud.set_crosshair_visible(not piloting)
 	if piloting:
 		tablet.close()
 	_update_route_offset()
 	if state == ControlState.State.WALKING_DRONE_DEPLOYED and clips.is_empty() and not piloting:
 		hud.show_notice("Dron listo. %s para tomar el control." % InputHints.button("pilot_toggle"))
+
+
+func _set_status(text: String) -> void:
+	hud.set_status(text)
+	visor.set_status(text)
+
+
+## Tells the player something: on the viewfinder's message line while piloting, as a notice
+## of the on-foot overlay otherwise. Messages with the same `key` replace each other.
+func notify(text: String, level := VisorMessages.Level.INFO, key := &"", seconds := 3.0) -> void:
+	if control.state == ControlState.State.PILOTING:
+		visor.messages.post(text, level, seconds, key)
+	else:
+		hud.show_notice(text, seconds)
+
+
+func _on_drone_crashed(crashed: Drone, _speed: float) -> void:
+	if crashed != drone:
+		return
+	_pending_crash = true
+	_flush_crash_notice.call_deferred()
+
+
+func _on_recording_aborted(reason: String) -> void:
+	_pending_abort = reason
+	_flush_crash_notice.call_deferred()
+
+
+func _flush_crash_notice() -> void:
+	if not _pending_crash and _pending_abort.is_empty():
+		return
+	var text := ""
+	var walking_text := ""
+	if _pending_crash and not _pending_abort.is_empty():
+		text = "DRON ESTRELLADO · TOMA PERDIDA"
+		walking_text = _pending_abort
+	elif _pending_crash:
+		text = "DRON ESTRELLADO"
+		walking_text = "El dron se estrelló."
+	else:
+		text = "TOMA PERDIDA"
+		walking_text = _pending_abort
+	_pending_crash = false
+	_pending_abort = ""
+	var piloting := control.state == ControlState.State.PILOTING
+	notify(text if piloting else walking_text, VisorMessages.Level.ALERT, &"crash", 3.5)
+
+
+func _on_battery_low() -> void:
+	var piloting := control.state == ControlState.State.PILOTING
+	notify("BATERÍA BAJA" if piloting else "Batería del dron baja.", VisorMessages.Level.WARN,
+			&"battery", 3.0)
+
+
+func _on_battery_depleted() -> void:
+	var piloting := control.state == ControlState.State.PILOTING
+	notify("SIN BATERÍA" if piloting else "El dron se quedó sin batería.", VisorMessages.Level.ALERT,
+			&"battery", 4.0)
 
 
 func _on_recording_stopped(report: ShotReport) -> void:

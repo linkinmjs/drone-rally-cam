@@ -20,56 +20,54 @@ var _time_left := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.07, 0.85)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(18)
-	add_theme_stylebox_override("panel", style)
-	custom_minimum_size = Vector2(440, 0)
-	HudStyle.anchor(self, Control.PRESET_CENTER_RIGHT, 40.0)
-	# Below the viewfinder's readouts (height, speed, distance, gimbal).
-	offset_top += 90.0
-	offset_bottom += 90.0
+	add_theme_stylebox_override("panel", HudStyle.panel(0.8, 8, 18))
+	custom_minimum_size = Vector2(HudStyle.COLUMN_W, 0)
+	# In the right column of the viewfinder, below the battery and the readouts; it grows
+	# downwards, so a longer comment never covers them.
+	HudStyle.anchor(self, Control.PRESET_TOP_RIGHT)
+	offset_top += HudStyle.SUMMARY_TOP - HudStyle.MARGIN
+	offset_bottom += HudStyle.SUMMARY_TOP - HudStyle.MARGIN
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 6)
 	add_child(column)
-	column.add_child(HudStyle.make_label("TOMA ENTREGADA", 18, HudStyle.DIM))
+	column.add_child(HudStyle.make_label("TOMA ENTREGADA", HudStyle.SIZE_XS, HudStyle.DIM,
+			HORIZONTAL_ALIGNMENT_LEFT, true))
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 18)
 	column.add_child(header)
-	_grade = HudStyle.make_label("A", 72)
+	_grade = HudStyle.make_label("A", HudStyle.SIZE_DISPLAY, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_LEFT, true)
 	header.add_child(_grade)
 	var numbers := VBoxContainer.new()
 	numbers.alignment = BoxContainer.ALIGNMENT_CENTER
 	header.add_child(numbers)
-	_duration = HudStyle.make_label("", 20)
+	_duration = HudStyle.make_label("", HudStyle.SIZE_M)
 	numbers.add_child(_duration)
-	_average = HudStyle.make_label("", 18, HudStyle.DIM)
+	_average = HudStyle.make_label("", HudStyle.SIZE_S, HudStyle.DIM)
 	numbers.add_child(_average)
 	for aspect: String in ShotReport.ASPECTS:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
-		var name_label := HudStyle.make_label(ShotReport.ASPECTS[aspect], 18)
+		var name_label := HudStyle.make_label(ShotReport.ASPECTS[aspect], HudStyle.SIZE_S)
 		name_label.custom_minimum_size.x = 130
 		row.add_child(name_label)
 		var bar := ScoreBar.new()
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(bar)
-		var value := HudStyle.make_label("", 18, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
+		var value := HudStyle.make_label("", HudStyle.SIZE_S, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
 		value.custom_minimum_size.x = 64
 		row.add_child(value)
 		column.add_child(row)
-		var reason := HudStyle.make_label("", 16, HudStyle.DIM)
+		var reason := HudStyle.make_label("", HudStyle.SIZE_XS, HudStyle.DIM)
 		column.add_child(reason)
 		_bars[aspect] = bar
 		_values[aspect] = value
 		_reasons[aspect] = reason
-	_comment = HudStyle.make_label("", 18)
+	_comment = HudStyle.make_label("", HudStyle.SIZE_S)
 	_comment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_comment.custom_minimum_size.x = 400
 	column.add_child(_comment)
-	_rules = HudStyle.make_label(rules_text(), 14, HudStyle.DIM)
+	_rules = HudStyle.make_label(rules_text(), HudStyle.SIZE_XS, HudStyle.DIM)
 	_rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_rules.custom_minimum_size.x = 400
 	column.add_child(_rules)
@@ -78,18 +76,18 @@ func _ready() -> void:
 
 ## How grades are given, from the same thresholds the report uses.
 static func rules_text() -> String:
-	return "S: promedio ≥ %d %% y %d s seguidos buenos · A: ≥ %d %% · B: ≥ %d %% · mínimo %.1f s" % [
+	return "S: promedio ≥ %d %% y %d s seguidos buenos · A: ≥ %d %% · B: ≥ %d %% · mínimo %s s" % [
 			roundi(ShotReport.GRADE_S * 100.0), roundi(ShotScorer.CONTINUITY_SECONDS),
 			roundi(ShotReport.GRADE_A * 100.0), roundi(ShotReport.GRADE_B * 100.0),
-			ShotReport.MIN_DURATION]
+			HudStyle.decimal(ShotReport.MIN_DURATION)]
 
 
 func show_report(report: ShotReport) -> void:
 	_grade.text = report.grade
 	_grade.add_theme_color_override("font_color", grade_color(report.grade))
-	_duration.text = "Duración %s" % HudStyle.format_time(report.duration)
-	_average.text = "promedio %d %% · racha %.1f s" % [roundi(report.mean_score * 100.0),
-			report.longest_streak]
+	_duration.text = "Duración %s" % HudStyle.format_duration(report.duration)
+	_average.text = "promedio %d %% · racha %s" % [roundi(report.mean_score * 100.0),
+			HudStyle.format_duration(report.longest_streak)]
 	for aspect: String in ShotReport.ASPECTS:
 		var value := report.aspect_mean(aspect)
 		_bars[aspect].value = value

@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://be6l02nphlj5e"]
 
-[ext_resource type="PackedScene" uid="uid://cmn8s6qwptgio" path="res://hud/hud.tscn" id="2"]
 [ext_resource type="Script" uid="uid://by3bxl5y3a7mw" path="res://gui/options_menu/hud_config.gd" id="3"]
 
 [node name="HUDConfig" type="HBoxContainer"]
@@ -105,7 +104,7 @@ text = "HUD_LADDER"
 [node name="CheckHeading" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "HUD_COMPASS"
+text = "HUD_HEADING"
 
 [node name="CheckSpeed" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
@@ -117,10 +116,10 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "HUD_ALTITUDE"
 
-[node name="CheckSideTapes" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
+[node name="CheckDistance" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "HUD_SIDE_TAPES"
+text = "HUD_DISTANCE"
 
 [node name="CheckFlightMode" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
@@ -132,10 +131,10 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "HUD_STICKS"
 
-[node name="CheckRPM" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
+[node name="CheckGimbal" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "HUD_RPM"
+text = "HUD_GIMBAL_TILT"
 
 [node name="CheckStatus" type="CheckButton" parent="ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
@@ -167,7 +166,3 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"HudPreviewPanel"
-
-[node name="HUD" parent="Preview" instance=ExtResource("2")]
-unique_name_in_owner = true
-layout_mode = 2

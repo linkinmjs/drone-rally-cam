@@ -27,7 +27,7 @@ func _ready() -> void:
 	drone_marker.visible = false
 	add_child(drone_marker)
 
-	_status = HudStyle.make_label("", 26, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_status = HudStyle.make_label("", HudStyle.SIZE_L, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_status)
 	HudStyle.anchor(_status, Control.PRESET_CENTER_TOP, 28.0)
 
@@ -37,10 +37,7 @@ func _ready() -> void:
 
 	_checklist_panel = PanelContainer.new()
 	_checklist_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.03, 0.04, 0.05, 0.45)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(12)
+	var style := HudStyle.panel(0.45)
 	_checklist_panel.add_theme_stylebox_override("panel", style)
 	add_child(_checklist_panel)
 	HudStyle.anchor(_checklist_panel, Control.PRESET_TOP_LEFT, 20.0)
@@ -48,18 +45,19 @@ func _ready() -> void:
 	_checklist.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_checklist.add_theme_constant_override("separation", 4)
 	_checklist_panel.add_child(_checklist)
-	_checklist_title = HudStyle.make_label("QUÉ HACER", 16, HudStyle.DIM)
+	_checklist_title = HudStyle.make_label("QUÉ HACER", HudStyle.SIZE_XS, HudStyle.DIM,
+			HORIZONTAL_ALIGNMENT_LEFT, true)
 	_checklist.add_child(_checklist_title)
 
-	_crosshair = HudStyle.make_label("·", 34, HudStyle.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_crosshair = HudStyle.make_label("·", HudStyle.SIZE_L, HudStyle.DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_crosshair)
 	_crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 
-	_prompt = HudStyle.make_label("", 24, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	_prompt = HudStyle.make_label("", HudStyle.SIZE_M, HudStyle.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_prompt)
 	HudStyle.anchor(_prompt, Control.PRESET_CENTER_BOTTOM, 150.0)
 
-	_notice = HudStyle.make_label("", 24, HudStyle.AMBER, HORIZONTAL_ALIGNMENT_CENTER)
+	_notice = HudStyle.make_label("", HudStyle.SIZE_M, HudStyle.AMBER, HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_notice)
 	HudStyle.anchor(_notice, Control.PRESET_CENTER_BOTTOM, 200.0)
 
@@ -79,7 +77,7 @@ func set_crosshair_visible(value: bool) -> void:
 ## Steps of the stage; the ones before `current` are done, `current` is highlighted.
 func set_checklist(steps: PackedStringArray, current: int) -> void:
 	while _checklist.get_child_count() - 1 < steps.size():
-		_checklist.add_child(HudStyle.make_label("", 20))
+		_checklist.add_child(HudStyle.make_label("", HudStyle.SIZE_S))
 	for i in steps.size():
 		var label := _checklist.get_child(i + 1) as Label
 		if i < current:

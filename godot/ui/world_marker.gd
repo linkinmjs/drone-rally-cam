@@ -6,6 +6,8 @@ extends Control
 
 
 const EDGE_MARGIN := 0.8
+## Room between the edge arrow and its label.
+const LABEL_GAP := 14.0
 
 var target: Node3D = null
 ## Added to the target's position, to mark above it instead of at its base.
@@ -17,7 +19,7 @@ var is_on_screen := false
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -54,7 +56,7 @@ func _draw() -> void:
 				p + Vector2(0, 12), p + Vector2(-12, 0), p + Vector2(0, -12)])
 		draw_polyline(diamond, HUDDraw.SHADOW, 6.0, true)
 		draw_polyline(diamond, color, 3.0, true)
-		HUDDraw.text(self, HUDDraw.font_mono(), p + Vector2(-140, -22), text, 20,
+		HUDDraw.text(self, HUDDraw.font_mono(), p + Vector2(-140, -22), text, HudStyle.SIZE_S,
 				HORIZONTAL_ALIGNMENT_CENTER, 280.0, color)
 		return
 	# Off screen: an arrow on an ellipse around the centre, pointing toward the target.
@@ -69,5 +71,15 @@ func _draw() -> void:
 	var arrow := PackedVector2Array([tip, edge - direction * 6.0 + side, edge - direction * 6.0 - side])
 	draw_colored_polygon(arrow, color)
 	draw_polyline(PackedVector2Array([arrow[0], arrow[1], arrow[2], arrow[0]]), HUDDraw.SHADOW, 2.0, true)
-	HUDDraw.text(self, HUDDraw.font_mono(), edge - direction * 40.0 + Vector2(-140, 7), text, 18,
+	var font := HUDDraw.font_mono()
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, HudStyle.SIZE_S)
+	var label_center := label_center_for(edge, direction, text_size)
+	HUDDraw.text(self, font, label_center + Vector2(-140, 7), text, HudStyle.SIZE_S,
 			HORIZONTAL_ALIGNMENT_CENTER, 280.0, color)
+
+
+## Center of the label of an edge arrow at `edge` pointing along `direction`: inside the screen,
+## far enough back that the text box (`text_size`) never covers the arrow.
+static func label_center_for(edge: Vector2, direction: Vector2, text_size: Vector2) -> Vector2:
+	var reach := absf(direction.x) * text_size.x / 2.0 + absf(direction.y) * text_size.y / 2.0
+	return edge - direction * (reach + 6.0 + LABEL_GAP)

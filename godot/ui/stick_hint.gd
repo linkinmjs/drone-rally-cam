@@ -1,4 +1,5 @@
-# From drone-simulator (GPL-3.0), 2026: renamed from TutorialStickHint, "to the centre" target.
+# From drone-simulator (GPL-3.0), 2026: renamed from TutorialStickHint, "to the centre" target,
+# stick and target set separately, HUD panel style. It is the only stick widget on screen.
 class_name StickHint
 extends Control
 ## Small stick box: a ring shows where the stick is now and a pulsing arrow shows where it
@@ -7,7 +8,7 @@ extends Control
 
 
 const TRAVEL_RATIO := 0.36
-const TARGET_COLOR := Color("#7DB7FF")
+const TARGET_COLOR := HudStyle.SKY
 
 var stick := Vector2.ZERO
 var target := Vector2.ZERO
@@ -18,13 +19,37 @@ var _time := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(112, 112)
+	if custom_minimum_size == Vector2.ZERO:
+		custom_minimum_size = Vector2(96, 96)
 
 
 func set_values(current: Vector2, suggested: Vector2) -> void:
 	stick = current.clampf(-1.0, 1.0)
 	target = suggested.clampf(-1.0, 1.0)
 	queue_redraw()
+
+
+## Where the stick is now.
+func set_stick(current: Vector2) -> void:
+	var clamped := current.clampf(-1.0, 1.0)
+	if clamped != stick:
+		stick = clamped
+		if is_visible_in_tree():
+			queue_redraw()
+
+
+## Where the stick should go: a direction, the centre, or nothing (Vector2.ZERO, false).
+func set_target(suggested: Vector2, to_centre := false) -> void:
+	var clamped := suggested.clampf(-1.0, 1.0)
+	if clamped == target and to_centre == centre_target:
+		return
+	target = clamped
+	centre_target = to_centre
+	queue_redraw()
+
+
+func has_target() -> bool:
+	return target != Vector2.ZERO or centre_target
 
 
 func _process(delta: float) -> void:
@@ -35,9 +60,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0, 0, 0, 0.3)
-	box.set_corner_radius_all(8)
+	var box := HudStyle.panel(0.35)
 	draw_style_box(box, rect)
 	var center := size / 2.0
 	var travel := minf(size.x, size.y) * TRAVEL_RATIO

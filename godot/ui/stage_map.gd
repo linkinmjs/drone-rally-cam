@@ -91,7 +91,7 @@ func _draw() -> void:
 	var c := to_map(car.global_position)
 	draw_circle(c, 9.0, Color(0, 0, 0, 0.6))
 	draw_circle(c, 7.0, CAR)
-	HUDDraw.text(self, font, c + Vector2(12, 6), str(car.car_number), 18, HORIZONTAL_ALIGNMENT_LEFT, -1, CAR)
+	HUDDraw.text(self, font, c + Vector2(12, 6), str(car.car_number), HudStyle.SIZE_S, HORIZONTAL_ALIGNMENT_LEFT, -1, CAR)
 
 	var p := to_map(stage.player.global_position)
 	var forward := -stage.player.global_basis.z
@@ -109,11 +109,11 @@ func _draw() -> void:
 
 	# Legend.
 	var y := size.y - 16.0
-	HUDDraw.text(self, font, Vector2(16, y), "▲ vos   ◆ dron   ● auto   ○ tu punto del camino", 16,
+	HUDDraw.text(self, font, Vector2(16, y), "▲ vos   ◆ dron   ● auto   ○ tu punto del camino", HudStyle.SIZE_XS,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, Color(1, 1, 1, 0.8))
 
 
 func _draw_flag(at: Vector2, color: Color, label: String, font: Font) -> void:
 	draw_circle(at, 8.0, Color(0, 0, 0, 0.6))
 	draw_circle(at, 6.0, color)
-	HUDDraw.text(self, font, at + Vector2(12, -8), label, 16, HORIZONTAL_ALIGNMENT_LEFT, -1, color)
+	HUDDraw.text(self, font, at + Vector2(12, -8), label, HudStyle.SIZE_XS, HORIZONTAL_ALIGNMENT_LEFT, -1, color)

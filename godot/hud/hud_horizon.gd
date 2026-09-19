@@ -13,6 +13,10 @@ const LADDER_STEPS: Array[int] = [-30, -20, -10, 10, 20, 30]
 ## Rungs further than this from the center are not drawn (they would cover the compass
 ## and the stick display)
 const LADDER_MAX_OFFSET := 270.0
+## The camera horizon stays out of the viewfinder's side columns (readouts, panels): it is
+## drawn in the central band only.
+const SIDE_CLEARANCE := HudStyle.MARGIN + HudStyle.COLUMN_W + HudStyle.GUTTER
+const MIN_HALF_BAND := 240.0
 
 var show_horizon := true
 var show_ladder := false
@@ -56,7 +60,10 @@ func _draw_camera_horizon() -> void:
 		for azimuth in range(-88, 89, 4):
 			var direction := flat.rotated(Vector3.UP, deg_to_rad(azimuth))
 			points.append(_to_local(HUDDraw.project_direction(camera, direction)))
-		HUDDraw.dashed_polyline(self, points, 7.0, 11.0, 3.5, HUDDraw.WHITE, center, HOLE_RADIUS)
+		var half_band := maxf(size.x / 2.0 - SIDE_CLEARANCE, MIN_HALF_BAND)
+		points = clip_to_band(points, center.x - half_band, center.x + half_band)
+		if points.size() >= 2:
+			HUDDraw.dashed_polyline(self, points, 7.0, 11.0, 3.5, HUDDraw.WHITE, center, HOLE_RADIUS)
 	if show_ladder:
 		for elevation in LADDER_STEPS:
 			var e := deg_to_rad(elevation)
@@ -71,6 +78,30 @@ func _draw_camera_horizon() -> void:
 			if absf(p_mid.y - center.y) > LADDER_MAX_OFFSET or absf(p_mid.x - center.x) > LADDER_MAX_OFFSET:
 				continue
 			_draw_rung(p_left, p_right, elevation)
+
+
+## The longest run of `points` between x = `left` and x = `right`, its ends cut exactly at the
+## band edges.
+static func clip_to_band(points: PackedVector2Array, left: float, right: float) -> PackedVector2Array:
+	var best := PackedVector2Array()
+	var run := PackedVector2Array()
+	var previous := Vector2.INF
+	for point in points:
+		var inside := point.is_finite() and point.x >= left and point.x <= right
+		var was_inside := previous.is_finite() and previous.x >= left and previous.x <= right
+		if point.is_finite() and previous.is_finite() and inside != was_inside:
+			var edge := left if minf(point.x, previous.x) < left else right
+			run.append(previous.lerp(point, (edge - previous.x) / (point.x - previous.x)))
+		if inside:
+			run.append(point)
+		elif not run.is_empty():
+			if run.size() > best.size():
+				best = run
+			run = PackedVector2Array()
+		previous = point
+	if run.size() > best.size():
+		best = run
+	return best
 
 
 func _draw_attitude_horizon() -> void:

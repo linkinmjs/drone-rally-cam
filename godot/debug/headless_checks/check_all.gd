@@ -17,6 +17,7 @@ const CHECKS: Array[String] = [
 	"res://debug/headless_checks/check_stage_info.gd",
 	"res://debug/headless_checks/check_scoring_ui.gd",
 	"res://debug/headless_checks/check_gamepad_nav.gd",
+	"res://debug/headless_checks/check_visor.gd",
 ]
 
 ## The checks read and write their settings here, never in the player's user://config.

@@ -14,24 +14,28 @@ const LANGUAGE := "es"
 ## because this autoload is created before StickNavigation.
 const STICK_NAV_DEFAULT := 2
 const STICK_NAV_MAX := 2
+## Version of the saved HUD settings. 2: no RPM or side tapes, distance and gimbal rows, car
+## marker on by default (a version 1 file keeps its other toggles but not the car marker).
+const HUD_CONFIG_VERSION := 2
+const HUD_OBSOLETE_KEYS: Array[String] = ["rpm", "side_tapes"]
 const HUD_BOOL_KEYS: Array[String] = ["crosshair", "horizon", "ladder", "speed", "altitude",
-		"heading", "sticks", "rpm", "flight_mode", "status", "side_tapes", "car_marker",
+		"heading", "sticks", "flight_mode", "status", "distance", "gimbal", "car_marker",
 		"pilot_guide", "score_bars", "thirds"]
-## Cine: only what a camera operator needs. Piloto: plus the flight aids of the simulator.
-## Completo: everything.
+## Cine: only what a camera operator needs. Piloto: plus the flight aids of the simulator
+## (the default). Completo: everything, pitch ladder and heading included.
 const HUD_PRESETS := [
 	{"crosshair": false, "horizon": false, "ladder": false, "speed": false, "altitude": false,
-			"heading": false, "sticks": false, "rpm": false, "flight_mode": false, "status": false,
-			"side_tapes": false, "car_marker": false, "pilot_guide": false, "score_bars": true,
-			"thirds": true},
+			"heading": false, "sticks": false, "flight_mode": false, "status": false,
+			"distance": false, "gimbal": false, "car_marker": false, "pilot_guide": false,
+			"score_bars": true, "thirds": true},
 	{"crosshair": true, "horizon": true, "ladder": false, "speed": true, "altitude": true,
-			"heading": false, "sticks": true, "rpm": false, "flight_mode": true, "status": true,
-			"side_tapes": false, "car_marker": false, "pilot_guide": true, "score_bars": true,
-			"thirds": true},
+			"heading": false, "sticks": true, "flight_mode": true, "status": true,
+			"distance": true, "gimbal": true, "car_marker": true, "pilot_guide": true,
+			"score_bars": true, "thirds": true},
 	{"crosshair": true, "horizon": true, "ladder": true, "speed": true, "altitude": true,
-			"heading": true, "sticks": true, "rpm": true, "flight_mode": true, "status": true,
-			"side_tapes": true, "car_marker": true, "pilot_guide": true, "score_bars": true,
-			"thirds": true},
+			"heading": true, "sticks": true, "flight_mode": true, "status": true,
+			"distance": true, "gimbal": true, "car_marker": true, "pilot_guide": true,
+			"score_bars": true, "thirds": true},
 ]
 
 var game_settings_path := "%s/GameSettings.cfg" % [Controls.CONFIG_DIR]
@@ -116,8 +120,11 @@ func load_hud_config() -> void:
 	if err == OK:
 		var hud_section := "hud_config"
 		if config.has_section(hud_section):
+			var version := int(config.get_value(hud_section, "version", 1))
 			for key in config.get_section_keys(hud_section):
 				var value: Variant = config.get_value(hud_section, key)
+				if key == "car_marker" and version < 2:
+					continue
 				if hud_config.has(key):
 					if key == "fps" and (value is int or value is float):
 						hud_config[key] = clampf(value, 5, 60) as int
@@ -137,6 +144,10 @@ func save_hud_config() -> void:
 	if err == OK or err == ERR_FILE_NOT_FOUND or err == ERR_PARSE_ERROR:
 		for key: String in hud_config.keys():
 			config.set_value("hud_config", key, hud_config[key])
+		for key in HUD_OBSOLETE_KEYS:
+			if config.has_section_key("hud_config", key):
+				config.erase_section_key("hud_config", key)
+		config.set_value("hud_config", "version", HUD_CONFIG_VERSION)
 		err = config.save(game_settings_path)
 	if err != OK:
 		push_error("Error while saving the HUD settings: %s" % [error_string(err)])

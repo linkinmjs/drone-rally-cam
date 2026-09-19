@@ -1,5 +1,6 @@
 # Modified from drone-simulator (GPL-3.0), 2026: every direction moves between the buttons,
-# explicit accept handling and a hint row with the buttons of the device in use.
+# explicit accept handling, the question as title and text, and a row with the buttons of the
+# device in use (KeyCap).
 class_name ConfirmOverlay
 extends Control
 ## Modal question drawn inside the interface (no OS window), navigable with
@@ -16,7 +17,7 @@ var _done := false
 var _card: PanelContainer = null
 var _button_ok: Button = null
 var _button_cancel: Button = null
-var _hint: Label = null
+var _hint: HBoxContainer = null
 
 
 func setup(text: String, ok_text: String, cancel_text: String, danger: bool) -> void:
@@ -31,11 +32,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	var scrim := Panel.new()
-	scrim.theme_type_variation = &"OverlayScrim"
-	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(scrim)
+	add_child(Scrim.new())
 
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -44,20 +41,31 @@ func _ready() -> void:
 
 	_card = PanelContainer.new()
 	_card.theme_type_variation = &"Card"
-	_card.custom_minimum_size = Vector2(560, 0)
+	_card.custom_minimum_size = Vector2(620, 0)
 	center.add_child(_card)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override(&"separation", 28)
+	vbox.add_theme_constant_override(&"separation", 12)
 	_card.add_child(vbox)
 
-	var label := Label.new()
-	label.text = _text
-	label.theme_type_variation = &"HeadingLabel"
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size = Vector2(480, 0)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	vbox.add_child(label)
+	var parts := split_question(tr(_text))
+	var title := Label.new()
+	title.text = parts[0]
+	title.theme_type_variation = &"HeadingLabel"
+	title.add_theme_font_size_override(&"font_size", 28)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.custom_minimum_size = Vector2(540, 0)
+	vbox.add_child(title)
+	if not parts[1].is_empty():
+		var body := Label.new()
+		body.text = parts[1]
+		body.theme_type_variation = &"SubtitleLabel"
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.custom_minimum_size = Vector2(540, 0)
+		vbox.add_child(body)
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, 16)
+	vbox.add_child(gap)
 
 	var buttons := HBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_END
@@ -68,6 +76,7 @@ func _ready() -> void:
 		_button_cancel = Button.new()
 		_button_cancel.text = _cancel_text
 		_button_cancel.custom_minimum_size = Vector2(150, 0)
+		_button_cancel.theme_type_variation = &"GhostButton"
 		_button_cancel.set_meta(&"ui_back", true)
 		buttons.add_child(_button_cancel)
 		var _discard := _button_cancel.pressed.connect(_close.bind(false))
@@ -79,13 +88,13 @@ func _ready() -> void:
 	buttons.add_child(_button_ok)
 	var _discard := _button_ok.pressed.connect(_close.bind(true))
 
-	_hint = Label.new()
-	_hint.theme_type_variation = &"HintLabel"
-	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var separator := HSeparator.new()
+	vbox.add_child(separator)
+	_hint = HBoxContainer.new()
+	_hint.alignment = BoxContainer.ALIGNMENT_END
+	_hint.add_theme_constant_override(&"separation", 8)
 	vbox.add_child(_hint)
-	_update_hint()
-	_discard = UI.input_kind_changed.connect(_update_hint.unbind(1))
-	_discard = Controls.input_device_changed.connect(_update_hint.unbind(1))
+	_build_hint()
 
 	# Keep keyboard/gamepad focus inside the dialog. Every direction moves to the other
 	# button: with two buttons side by side, up and down (stick or D-pad) must reach
@@ -107,7 +116,7 @@ func _ready() -> void:
 
 	UI.register_context(self)
 	modulate.a = 0.0
-	_card.pivot_offset = Vector2(280, 80)
+	_card.pivot_offset = Vector2(310, 120)
 	_card.scale = Vector2(0.96, 0.96)
 	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	var _step1 := tween.tween_property(self, "modulate:a", 1.0, 0.14)
@@ -152,14 +161,33 @@ func _owns_focus() -> bool:
 	return focus != null and (focus == _button_ok or focus == _button_cancel)
 
 
-func _update_hint() -> void:
-	if not is_instance_valid(_hint):
-		return
-	var parts := PackedStringArray()
-	parts.append("%s  %s" % [InputHints.menu_key(&"ui_accept"), tr("UI_HINT_ACCEPT")])
+## The question as title and the rest as text: "¿Reiniciar la etapa?" / "Se pierden…".
+static func split_question(text: String) -> PackedStringArray:
+	for mark: String in ["? ", "! ", ". "]:
+		var at := text.find(mark)
+		if at > 0 and at < text.length() - 2:
+			return PackedStringArray([text.substr(0, at + 1), text.substr(at + 2).strip_edges()])
+	return PackedStringArray([text, ""])
+
+
+## Buttons to answer, drawn for the device in use (KeyCap follows it by itself).
+func _build_hint() -> void:
+	var hints: Array = [[&"ui_accept", "UI_HINT_ACCEPT"]]
 	if _button_cancel:
-		parts.append("%s  %s" % [InputHints.menu_key(&"ui_cancel"), tr("UI_HINT_BACK")])
-	_hint.text = "      ".join(parts)
+		hints.append([&"ui_cancel", "UI_HINT_BACK"])
+	for hint: Array in hints:
+		var cap := KeyCap.new()
+		cap.action = hint[0]
+		cap.cap_height = 26.0
+		_hint.add_child(cap)
+		var label := Label.new()
+		label.theme_type_variation = &"HintLabel"
+		label.text = hint[1]
+		_hint.add_child(label)
+		if hint != hints.back():
+			var gap := Control.new()
+			gap.custom_minimum_size = Vector2(14, 0)
+			_hint.add_child(gap)
 
 
 func _close(confirmed: bool) -> void:

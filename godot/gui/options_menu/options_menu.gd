@@ -1,4 +1,5 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: no graphics menu.
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: no graphics menu;
+# a hub of big cards.
 extends MenuScreen
 
 

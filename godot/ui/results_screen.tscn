@@ -11,47 +11,114 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="MenuColumn" type="VBoxContainer" parent="."]
-custom_minimum_size = Vector2(900, 0)
+[node name="Layout" type="HBoxContainer" parent="."]
 layout_mode = 2
-size_flags_horizontal = 0
+theme_override_constants/separation = 64
+
+[node name="MenuColumn" type="VBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="Title" type="Label" parent="MenuColumn"]
+[node name="Title" type="Label" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"DisplayLabel"
 text = "Etapa terminada"
+uppercase = true
 
-[node name="Subtitle" type="Label" parent="MenuColumn"]
+[node name="Subtitle" type="Label" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(540, 0)
 layout_mode = 2
 theme_type_variation = &"SubtitleLabel"
+autowrap_mode = 3
 
-[node name="Spacer" type="Control" parent="MenuColumn"]
-custom_minimum_size = Vector2(0, 24)
+[node name="Spacer" type="Control" parent="Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="ClipList" type="VBoxContainer" parent="MenuColumn"]
+[node name="Summary" type="HBoxContainer" parent="Layout/MenuColumn"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Best" type="Label" parent="Layout/MenuColumn/Summary"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_type_variation = &"GradeLabel"
+theme_override_font_sizes/font_size = 88
+horizontal_alignment = 1
+
+[node name="Notes" type="VBoxContainer" parent="Layout/MenuColumn/Summary"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+
+[node name="BestCaption" type="Label" parent="Layout/MenuColumn/Summary/Notes"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "RESULTS_BEST"
+uppercase = true
+
+[node name="Record" type="Label" parent="Layout/MenuColumn/Summary/Notes"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_type_variation = &"HeadingLabel"
+theme_override_colors/font_color = Color(1, 0.415686, 0.168627, 1)
+text = "RESULTS_RECORD"
 
-[node name="Spacer2" type="Control" parent="MenuColumn"]
-custom_minimum_size = Vector2(0, 30)
+[node name="Unlocked" type="Label" parent="Layout/MenuColumn/Summary/Notes"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.411765, 0.764706, 0.435294, 1)
+
+[node name="Spacer2" type="Control" parent="Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="ButtonRestart" type="Button" parent="MenuColumn"]
+[node name="ButtonNext" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
-text = "MENU_RESTART_STAGE"
+text = "RESULTS_NEXT"
 alignment = 0
 
-[node name="ButtonQuit" type="Button" parent="MenuColumn"]
+[node name="ButtonRestart" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
-text = "MENU_QUIT"
+text = "RESULTS_RETRY"
 alignment = 0
+
+[node name="ButtonMenu" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "RESULTS_MENU"
+alignment = 0
+
+[node name="ClipsColumn" type="VBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="ClipsCard" type="PanelContainer" parent="Layout/ClipsColumn"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Content" type="VBoxContainer" parent="Layout/ClipsColumn/ClipsCard"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ClipsHeader" type="Label" parent="Layout/ClipsColumn/ClipsCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "PAUSE_CLIPS"
+uppercase = true
+
+[node name="ClipList" type="VBoxContainer" parent="Layout/ClipsColumn/ClipsCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16

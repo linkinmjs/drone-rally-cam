@@ -1,30 +1,40 @@
 class_name ThemeBuilder
 extends RefCounted
-## Builds the light "minimal" menu theme from UIPalette.
-## Run `tools/build_theme.gd` to regenerate `gui/theme/main_theme.tres`.
+## Builds the "rally at sunset" menu theme of Drone Rally Cam from UIPalette: warm dark
+## surfaces, cream text, orange accent, a focus ring that reads over anything.
+## Run `debug/tools/build_theme.gd` to regenerate `gui/theme/main_theme.tres`; never edit
+## the .tres by hand.
 
 
 const P := preload("res://gui/theme/ui_palette.gd")
+
+## Every type variation the theme defines, for the checks.
+const VARIATIONS: Array[String] = ["DisplayLabel", "TitleLabel", "HeadingLabel", "SubtitleLabel",
+		"CaptionLabel", "SectionLabel", "HintLabel", "ValueLabel", "KeyCap", "GradeLabel",
+		"SectionHeader", "MenuItemButton", "PrimaryButton", "DangerButton", "GhostButton",
+		"HubCard", "Card", "InsetPanel", "Chip", "StatChip", "SliderRow", "ClearPanel",
+		"HudPreviewPanel", "OverlayScrim", "BodyText"]
 
 
 static func build() -> Theme:
 	var t := Theme.new()
 	var regular := load(P.FONT_REGULAR) as Font
 	var bold := load(P.FONT_BOLD) as Font
+	var mono := load(P.FONT_MONO) as Font
 	t.default_font = regular
-	t.default_font_size = 22
+	t.default_font_size = 20
 
 	_containers(t)
-	_labels(t, bold)
+	_labels(t, bold, mono)
 	_buttons(t, bold)
 	_panels(t)
 	_popups(t)
 	_ranges(t)
 	_toggles(t)
-	_tabs(t)
+	_tabs(t, bold)
 	_scroll(t)
 	_text_inputs(t)
-	_rich_text(t, regular, bold)
+	_rich_text(t, regular, bold, mono)
 	return t
 
 
@@ -47,10 +57,23 @@ static func flat(bg: Color, radius := 10, margins := Vector4(20, 12, 20, 12),
 	return sb
 
 
+## Focus ring: 2 px of accent with a dark halo outside it, visible over any background.
 static func focus_ring(radius := 10, expand := 3.0) -> StyleBoxFlat:
 	var sb := flat(Color.TRANSPARENT, radius + 2, Vector4.ZERO, P.ACCENT, 2)
 	sb.draw_center = false
 	sb.set_expand_margin_all(expand)
+	sb.shadow_color = P.FOCUS_HALO
+	sb.shadow_size = 2
+	return sb
+
+
+## Accent bar on the left side: focus and hover of the big menu entries.
+static func left_bar(bg: Color, margins: Vector4, bar := 4) -> StyleBoxFlat:
+	var sb := flat(bg, 8, margins)
+	sb.border_color = P.ACCENT
+	sb.border_width_left = bar
+	sb.corner_radius_top_left = 2
+	sb.corner_radius_bottom_left = 2
 	return sb
 
 
@@ -63,11 +86,19 @@ static func empty(margins := Vector4.ZERO) -> StyleBoxEmpty:
 	return sb
 
 
-static func with_shadow(sb: StyleBoxFlat, size := 18, offset := Vector2(0, 6)) -> StyleBoxFlat:
+static func with_shadow(sb: StyleBoxFlat, size := 24, offset := Vector2(0, 8)) -> StyleBoxFlat:
 	sb.shadow_color = P.SHADOW
 	sb.shadow_size = size
 	sb.shadow_offset = offset
 	return sb
+
+
+## Bold with a little tracking, for the small uppercase labels of sections.
+static func spaced(font: Font, spacing := 2) -> FontVariation:
+	var variation := FontVariation.new()
+	variation.base_font = font
+	variation.spacing_glyph = spacing
+	return variation
 
 
 # --- Sections ------------------------------------------------------------------------------
@@ -83,22 +114,24 @@ static func _containers(t: Theme) -> void:
 		t.set_constant("margin_" + side, "MarginContainer", 0)
 
 
-static func _labels(t: Theme, bold: Font) -> void:
+static func _labels(t: Theme, bold: Font, mono: Font) -> void:
 	t.set_color("font_color", "Label", P.TEXT)
 	t.set_color("font_shadow_color", "Label", Color.TRANSPARENT)
 	t.set_color("font_outline_color", "Label", Color.TRANSPARENT)
 	t.set_constant("outline_size", "Label", 0)
 	t.set_constant("line_spacing", "Label", 4)
 
+	var tracked := spaced(bold)
 	var variations := {
-		"DisplayLabel": [bold, 72, P.TEXT],
-		"TitleLabel": [bold, 44, P.TEXT],
-		"HeadingLabel": [bold, 26, P.TEXT],
-		"SubtitleLabel": [null, 24, P.TEXT_2],
-		"CaptionLabel": [null, 18, P.TEXT_2],
-		"SectionLabel": [bold, 16, P.TEXT_2],
+		"DisplayLabel": [bold, 64, P.TEXT],
+		"TitleLabel": [bold, 40, P.TEXT],
+		"HeadingLabel": [bold, 24, P.TEXT],
+		"SubtitleLabel": [null, 22, P.TEXT_2],
+		"CaptionLabel": [null, 17, P.TEXT_2],
+		"SectionLabel": [tracked, 15, P.TEXT_2],
 		"HintLabel": [null, 17, P.TEXT_2],
-		"ValueLabel": [null, 20, P.TEXT_2],
+		"ValueLabel": [mono, 20, P.TEXT],
+		"GradeLabel": [mono, 72, P.TEXT],
 	}
 	for variation: String in variations:
 		var data: Array = variations[variation]
@@ -108,15 +141,26 @@ static func _labels(t: Theme, bold: Font) -> void:
 		t.set_font_size("font_size", variation, data[1])
 		t.set_color("font_color", variation, data[2])
 
+	# Section title: small tracked capitals after an accent bar.
+	t.set_type_variation("SectionHeader", "Label")
+	t.set_font("font", "SectionHeader", tracked)
+	t.set_font_size("font_size", "SectionHeader", 16)
+	t.set_color("font_color", "SectionHeader", P.TEXT)
+	var header := flat(Color.TRANSPARENT, 0, Vector4(14, 2, 0, 2))
+	header.border_color = P.ACCENT
+	header.border_width_left = 4
+	t.set_stylebox("normal", "SectionHeader", header)
+
 	t.set_type_variation("KeyCap", "Label")
 	t.set_font("font", "KeyCap", bold)
 	t.set_font_size("font_size", "KeyCap", 15)
-	t.set_color("font_color", "KeyCap", P.TEXT_ON_ACCENT)
-	t.set_stylebox("normal", "KeyCap", flat(P.TEXT, 6, Vector4(8, 2, 8, 3)))
+	t.set_color("font_color", "KeyCap", P.TEXT)
+	t.set_stylebox("normal", "KeyCap", flat(P.SURFACE_ALT, 6, Vector4(8, 2, 8, 3), P.BORDER_STRONG, 1))
 
-	t.set_color("font_color", "TooltipLabel", P.TEXT_ON_ACCENT)
+	t.set_color("font_color", "TooltipLabel", P.TEXT)
 	t.set_font_size("font_size", "TooltipLabel", 18)
-	t.set_stylebox("panel", "TooltipPanel", with_shadow(flat(P.TEXT, 8, Vector4(14, 10, 14, 10)), 12))
+	t.set_stylebox("panel", "TooltipPanel",
+			with_shadow(flat(P.SURFACE_ALT, 8, Vector4(14, 10, 14, 10), P.BORDER_STRONG, 1), 12))
 
 
 static func _button_colors(t: Theme, type: String, normal: Color, hover: Color, focus: Color,
@@ -141,35 +185,33 @@ static func _buttons(t: Theme, bold: Font) -> void:
 		_button_colors(t, type, P.TEXT, P.TEXT, P.TEXT)
 	for type: String in ["Button", "MenuButton", "OptionButton"]:
 		var margins := Vector4(20, 12, 20, 12) if type != "OptionButton" else Vector4(16, 10, 16, 10)
-		t.set_stylebox("normal", type, flat(P.SURFACE, 10, margins, P.BORDER, 1))
-		t.set_stylebox("hover", type, flat(P.SURFACE_ALT, 10, margins, P.BORDER_STRONG, 1))
-		t.set_stylebox("pressed", type, flat(P.SURFACE_PRESSED, 10, margins, P.BORDER_STRONG, 1))
-		t.set_stylebox("hover_pressed", type, flat(P.SURFACE_PRESSED, 10, margins, P.BORDER_STRONG, 1))
+		t.set_stylebox("normal", type, flat(P.SURFACE_ALT, 10, margins, P.BORDER, 1))
+		t.set_stylebox("hover", type, flat(P.SURFACE_PRESSED, 10, margins, P.BORDER_STRONG, 1))
+		t.set_stylebox("pressed", type, flat(P.SURFACE_PRESSED, 10, margins, P.ACCENT, 1))
+		t.set_stylebox("hover_pressed", type, flat(P.SURFACE_PRESSED, 10, margins, P.ACCENT, 1))
 		t.set_stylebox("disabled", type, flat(P.SURFACE_DISABLED, 10, margins, P.BORDER, 1))
 		t.set_stylebox("focus", type, focus_ring())
 		t.set_constant("h_separation", type, 8)
 	t.set_icon("arrow", "OptionButton", _chevron_icon(14, 9, P.TEXT_2, false))
 	t.set_constant("arrow_margin", "OptionButton", 14)
 	t.set_constant("modulate_arrow", "OptionButton", 0)
-	t.set_color("font_color", "LinkButton", P.ACCENT)
-	t.set_color("font_hover_color", "LinkButton", P.ACCENT_HOVER)
+	t.set_color("font_color", "LinkButton", P.SKY)
+	t.set_color("font_hover_color", "LinkButton", P.TEXT)
 	t.set_stylebox("focus", "LinkButton", focus_ring(4, 2))
 
-	# Big transparent entries of the main and pause menus
+	# Big entries of the pause and results menus: plain text, an accent bar on focus.
 	var mib := "MenuItemButton"
 	t.set_type_variation(mib, "Button")
-	var m := Vector4(28, 14, 28, 14)
+	var m := Vector4(28, 11, 28, 11)
 	t.set_stylebox("normal", mib, empty(m))
-	t.set_stylebox("hover", mib, flat(P.SURFACE, 12, m, P.BORDER, 1))
-	t.set_stylebox("pressed", mib, flat(P.SURFACE_PRESSED, 12, m))
-	t.set_stylebox("hover_pressed", mib, flat(P.SURFACE_PRESSED, 12, m))
+	t.set_stylebox("hover", mib, left_bar(Color(P.ACCENT, 0.06), m))
+	t.set_stylebox("pressed", mib, left_bar(Color(P.ACCENT, 0.16), m))
+	t.set_stylebox("hover_pressed", mib, left_bar(Color(P.ACCENT, 0.16), m))
 	t.set_stylebox("disabled", mib, empty(m))
-	var mib_focus := flat(Color(P.ACCENT, 0.1), 12, Vector4.ZERO)
-	mib_focus.border_color = P.ACCENT
-	mib_focus.border_width_left = 5
-	t.set_stylebox("focus", mib, mib_focus)
-	t.set_font_size("font_size", mib, 30)
-	_button_colors(t, mib, P.TEXT, P.TEXT, P.ACCENT)
+	t.set_stylebox("focus", mib, left_bar(Color(P.ACCENT, 0.12), m))
+	t.set_font("font", mib, bold)
+	t.set_font_size("font_size", mib, 28)
+	_button_colors(t, mib, P.TEXT_2, P.TEXT, P.TEXT)
 
 	var primary := "PrimaryButton"
 	t.set_type_variation(primary, "Button")
@@ -178,25 +220,39 @@ static func _buttons(t: Theme, bold: Font) -> void:
 	t.set_stylebox("hover", primary, flat(P.ACCENT_HOVER, 10, pm))
 	t.set_stylebox("pressed", primary, flat(P.ACCENT_PRESSED, 10, pm))
 	t.set_stylebox("hover_pressed", primary, flat(P.ACCENT_PRESSED, 10, pm))
-	t.set_stylebox("disabled", primary, flat(P.BORDER_STRONG, 10, pm))
+	t.set_stylebox("disabled", primary, flat(P.SURFACE_PRESSED, 10, pm))
 	t.set_font("font", primary, bold)
-	_button_colors(t, primary, P.TEXT_ON_ACCENT, P.TEXT_ON_ACCENT, P.TEXT_ON_ACCENT, P.SURFACE)
+	_button_colors(t, primary, P.TEXT_ON_ACCENT, P.TEXT_ON_ACCENT, P.TEXT_ON_ACCENT, P.TEXT_DISABLED)
 
 	var danger := "DangerButton"
+	var dm := Vector4(20, 12, 20, 12)
 	t.set_type_variation(danger, "Button")
-	t.set_stylebox("normal", danger, flat(P.DANGER_SOFT, 10, Vector4(20, 12, 20, 12), P.DANGER_BORDER, 1))
-	t.set_stylebox("hover", danger, flat(P.DANGER_HOVER, 10, Vector4(20, 12, 20, 12), P.DANGER, 1))
-	t.set_stylebox("pressed", danger, flat(P.DANGER_HOVER, 10, Vector4(20, 12, 20, 12), P.DANGER, 1))
-	t.set_stylebox("hover_pressed", danger, flat(P.DANGER_HOVER, 10, Vector4(20, 12, 20, 12), P.DANGER, 1))
-	_button_colors(t, danger, P.DANGER, P.DANGER, P.DANGER)
+	t.set_stylebox("normal", danger, flat(P.DANGER_SOFT, 10, dm, P.DANGER, 2))
+	t.set_stylebox("hover", danger, flat(P.DANGER_HOVER, 10, dm, P.DANGER, 2))
+	t.set_stylebox("pressed", danger, flat(P.DANGER_HOVER, 10, dm, P.DANGER, 2))
+	t.set_stylebox("hover_pressed", danger, flat(P.DANGER_HOVER, 10, dm, P.DANGER, 2))
+	t.set_font("font", danger, bold)
+	_button_colors(t, danger, P.DANGER, P.TEXT, P.TEXT)
 
 	var ghost := "GhostButton"
+	var gm := Vector4(16, 10, 16, 10)
 	t.set_type_variation(ghost, "Button")
-	t.set_stylebox("normal", ghost, empty(Vector4(16, 10, 16, 10)))
-	t.set_stylebox("hover", ghost, flat(P.SURFACE_ALT, 10, Vector4(16, 10, 16, 10)))
-	t.set_stylebox("pressed", ghost, flat(P.SURFACE_PRESSED, 10, Vector4(16, 10, 16, 10)))
-	t.set_stylebox("hover_pressed", ghost, flat(P.SURFACE_PRESSED, 10, Vector4(16, 10, 16, 10)))
+	t.set_stylebox("normal", ghost, empty(gm))
+	t.set_stylebox("hover", ghost, flat(P.SURFACE_ALT, 10, gm))
+	t.set_stylebox("pressed", ghost, flat(P.SURFACE_PRESSED, 10, gm))
+	t.set_stylebox("hover_pressed", ghost, flat(P.SURFACE_PRESSED, 10, gm))
 	_button_colors(t, ghost, P.TEXT_2, P.TEXT, P.TEXT)
+
+	# Big cards of the options hub (icon, title and a line of description inside).
+	var hub := "HubCard"
+	var hm := Vector4(28, 24, 28, 24)
+	t.set_type_variation(hub, "Button")
+	t.set_stylebox("normal", hub, flat(P.SURFACE, 14, hm, P.BORDER, 1))
+	t.set_stylebox("hover", hub, flat(P.SURFACE_ALT, 14, hm, P.BORDER_STRONG, 1))
+	t.set_stylebox("pressed", hub, flat(P.SURFACE_PRESSED, 14, hm, P.ACCENT, 1))
+	t.set_stylebox("hover_pressed", hub, flat(P.SURFACE_PRESSED, 14, hm, P.ACCENT, 1))
+	t.set_stylebox("focus", hub, focus_ring(14, 3))
+	_button_colors(t, hub, P.TEXT, P.TEXT, P.TEXT)
 
 
 static func _panels(t: Theme) -> void:
@@ -205,18 +261,23 @@ static func _panels(t: Theme) -> void:
 
 	t.set_type_variation("Card", "PanelContainer")
 	t.set_stylebox("panel", "Card",
-			with_shadow(flat(P.SURFACE, 16, Vector4(36, 32, 36, 32), P.BORDER, 1)))
+			with_shadow(flat(P.SURFACE, 12, Vector4(36, 32, 36, 32), P.BORDER, 1)))
 	t.set_type_variation("InsetPanel", "PanelContainer")
-	t.set_stylebox("panel", "InsetPanel", flat(P.SURFACE_ALT, 12, Vector4(20, 18, 20, 18)))
+	t.set_stylebox("panel", "InsetPanel", flat(P.BG, 10, Vector4(20, 18, 20, 18), P.BORDER, 1))
 	t.set_type_variation("Chip", "PanelContainer")
-	t.set_stylebox("panel", "Chip", flat(P.SURFACE, 8, Vector4(10, 5, 12, 5), P.BORDER, 1))
+	t.set_stylebox("panel", "Chip", flat(P.SURFACE_ALT, 8, Vector4(10, 5, 12, 5), P.BORDER, 1))
+	t.set_type_variation("StatChip", "PanelContainer")
+	t.set_stylebox("panel", "StatChip", flat(P.SURFACE_ALT, 18, Vector4(14, 6, 16, 6), P.BORDER_STRONG, 1))
+	t.set_type_variation("SliderRow", "PanelContainer")
+	var row_margins := Vector4(20, 12, 20, 12)
+	t.set_stylebox("panel", "SliderRow", flat(P.SURFACE_ALT, 10, row_margins))
+	t.set_stylebox("focus", "SliderRow", left_bar(Color(P.ACCENT, 0.12), row_margins))
 	t.set_type_variation("ClearPanel", "PanelContainer")
 	t.set_stylebox("panel", "ClearPanel", empty())
 	t.set_type_variation("HudPreviewPanel", "PanelContainer")
-	var preview := flat(Color("#5B7A99"), 12, Vector4.ZERO)
-	t.set_stylebox("panel", "HudPreviewPanel", preview)
+	t.set_stylebox("panel", "HudPreviewPanel", flat(Color("#3B5268"), 12, Vector4.ZERO, P.BORDER, 1))
 	t.set_type_variation("OverlayScrim", "Panel")
-	t.set_stylebox("panel", "OverlayScrim", flat(Color(P.BG, 0.72), 0, Vector4.ZERO))
+	t.set_stylebox("panel", "OverlayScrim", flat(P.SCRIM, 0, Vector4.ZERO))
 
 	# Rows that behave like buttons (control bindings)
 	var rm := Vector4(14, 8, 14, 8)
@@ -236,13 +297,13 @@ static func _panels(t: Theme) -> void:
 	t.set_stylebox("separator", "VSeparator", vline)
 	t.set_constant("separation", "VSeparator", 16)
 
-	t.set_stylebox("background", "ProgressBar", flat(P.SURFACE_ALT, 4, Vector4.ZERO))
+	t.set_stylebox("background", "ProgressBar", flat(P.SURFACE_PRESSED, 4, Vector4.ZERO))
 	t.set_stylebox("fill", "ProgressBar", flat(P.ACCENT, 4, Vector4.ZERO))
 	t.set_color("font_color", "ProgressBar", P.TEXT)
 
 
 static func _popups(t: Theme) -> void:
-	var panel := with_shadow(flat(P.SURFACE, 12, Vector4(8, 8, 8, 8), P.BORDER, 1), 16)
+	var panel := with_shadow(flat(P.SURFACE_ALT, 12, Vector4(8, 8, 8, 8), P.BORDER_STRONG, 1), 16)
 	t.set_stylebox("panel", "PopupMenu", panel)
 	t.set_stylebox("panel", "PopupPanel", panel)
 	t.set_stylebox("hover", "PopupMenu", flat(P.ACCENT_SOFT, 8, Vector4(12, 8, 12, 8)))
@@ -251,7 +312,7 @@ static func _popups(t: Theme) -> void:
 	sep.color = P.BORDER
 	t.set_stylebox("separator", "PopupMenu", sep)
 	t.set_color("font_color", "PopupMenu", P.TEXT)
-	t.set_color("font_hover_color", "PopupMenu", P.ACCENT_PRESSED)
+	t.set_color("font_hover_color", "PopupMenu", P.ACCENT_HOVER)
 	t.set_color("font_disabled_color", "PopupMenu", P.TEXT_DISABLED)
 	t.set_color("font_accelerator_color", "PopupMenu", P.TEXT_2)
 	t.set_color("font_separator_color", "PopupMenu", P.TEXT_2)
@@ -286,9 +347,9 @@ static func _ranges(t: Theme) -> void:
 		t.set_stylebox("slider", type, track)
 		t.set_stylebox("grabber_area", type, fill)
 		t.set_stylebox("grabber_area_highlight", type, fill)
-		t.set_icon("grabber", type, _ring_icon(24, P.SURFACE, P.ACCENT, 2.5))
-		t.set_icon("grabber_highlight", type, _ring_icon(26, P.ACCENT, P.SURFACE, 3.0))
-		t.set_icon("grabber_disabled", type, _ring_icon(24, P.SURFACE, P.BORDER_STRONG, 2.5))
+		t.set_icon("grabber", type, _ring_icon(24, P.TEXT, P.ACCENT, 2.5))
+		t.set_icon("grabber_highlight", type, _ring_icon(26, P.ACCENT, P.TEXT, 3.0))
+		t.set_icon("grabber_disabled", type, _ring_icon(24, P.SURFACE_PRESSED, P.BORDER_STRONG, 2.5))
 		t.set_icon("tick", type, _tick_icon(type == "HSlider"))
 		t.set_stylebox("focus", type, focus_ring(8, 6))
 		t.set_constant("center_grabber", type, 0)
@@ -307,10 +368,10 @@ static func _toggles(t: Theme) -> void:
 		t.set_stylebox("focus", type, focus_ring(8, 4))
 		t.set_constant("h_separation", type, 14)
 		t.set_constant("check_v_offset", type, 0)
-	var on := _switch_icon(true, P.ACCENT)
-	var off := _switch_icon(false, P.BORDER_STRONG)
-	var on_disabled := _switch_icon(true, Color(P.ACCENT, 0.4))
-	var off_disabled := _switch_icon(false, P.BORDER)
+	var on := _switch_icon(true, P.ACCENT, P.TEXT)
+	var off := _switch_icon(false, P.SURFACE_PRESSED, P.TEXT_2)
+	var on_disabled := _switch_icon(true, Color(P.ACCENT, 0.35), P.TEXT_DISABLED)
+	var off_disabled := _switch_icon(false, P.SURFACE_ALT, P.TEXT_DISABLED)
 	for suffix: String in ["", "_mirrored"]:
 		t.set_icon("checked" + suffix, "CheckButton", on)
 		t.set_icon("unchecked" + suffix, "CheckButton", off)
@@ -320,25 +381,31 @@ static func _toggles(t: Theme) -> void:
 	t.set_icon("unchecked", "CheckBox", _checkbox_icon(false, P.BORDER_STRONG))
 	t.set_icon("checked_disabled", "CheckBox", _checkbox_icon(true, P.BORDER_STRONG))
 	t.set_icon("unchecked_disabled", "CheckBox", _checkbox_icon(false, P.BORDER))
-	t.set_icon("radio_checked", "CheckBox", _ring_icon(24, P.SURFACE, P.ACCENT, 7.0))
+	t.set_icon("radio_checked", "CheckBox", _ring_icon(24, P.TEXT_ON_ACCENT, P.ACCENT, 7.0))
 	t.set_icon("radio_unchecked", "CheckBox", _ring_icon(24, P.SURFACE, P.BORDER_STRONG, 2.0))
 	t.set_icon("radio_checked_disabled", "CheckBox", _ring_icon(24, P.SURFACE, P.BORDER_STRONG, 7.0))
 	t.set_icon("radio_unchecked_disabled", "CheckBox", _ring_icon(24, P.SURFACE, P.BORDER, 2.0))
 
 
-static func _tabs(t: Theme) -> void:
+static func _tabs(t: Theme, bold: Font) -> void:
 	for type: String in ["TabContainer", "TabBar"]:
 		var tm := Vector4(22, 10, 22, 10)
-		t.set_stylebox("tab_selected", type, flat(P.ACCENT_SOFT, 10, tm))
+		var selected := flat(P.SURFACE_ALT, 10, tm)
+		selected.border_color = P.ACCENT
+		selected.border_width_bottom = 3
+		selected.corner_radius_bottom_left = 0
+		selected.corner_radius_bottom_right = 0
+		t.set_stylebox("tab_selected", type, selected)
 		t.set_stylebox("tab_unselected", type, empty(tm))
 		t.set_stylebox("tab_hovered", type, flat(P.SURFACE_ALT, 10, tm))
 		t.set_stylebox("tab_disabled", type, empty(tm))
 		t.set_stylebox("tab_focus", type, focus_ring(10, 2))
-		t.set_color("font_selected_color", type, P.ACCENT_PRESSED)
+		t.set_color("font_selected_color", type, P.TEXT)
 		t.set_color("font_unselected_color", type, P.TEXT_2)
 		t.set_color("font_hovered_color", type, P.TEXT)
 		t.set_color("font_disabled_color", type, P.TEXT_DISABLED)
 		t.set_color("font_outline_color", type, Color.TRANSPARENT)
+		t.set_font("font", type, bold)
 		t.set_constant("h_separation", type, 8)
 		t.set_constant("outline_size", type, 0)
 	t.set_stylebox("panel", "TabContainer", empty(Vector4(0, 20, 0, 0)))
@@ -357,7 +424,7 @@ static func _scroll(t: Theme) -> void:
 		t.set_stylebox("scroll_focus", type, flat(Color.TRANSPARENT, 4, Vector4(3, 3, 3, 3)))
 		t.set_stylebox("grabber", type, flat(P.BORDER_STRONG, 4, Vector4(3, 3, 3, 3)))
 		t.set_stylebox("grabber_highlight", type, flat(P.TEXT_2, 4, Vector4(3, 3, 3, 3)))
-		t.set_stylebox("grabber_pressed", type, flat(P.TEXT_2, 4, Vector4(3, 3, 3, 3)))
+		t.set_stylebox("grabber_pressed", type, flat(P.ACCENT, 4, Vector4(3, 3, 3, 3)))
 		for icon: String in ["increment", "increment_highlight", "increment_pressed",
 				"decrement", "decrement_highlight", "decrement_pressed"]:
 			t.set_icon(icon, type, blank)
@@ -365,7 +432,7 @@ static func _scroll(t: Theme) -> void:
 
 static func _text_inputs(t: Theme) -> void:
 	var m := Vector4(12, 8, 12, 8)
-	t.set_stylebox("normal", "LineEdit", flat(P.SURFACE, 8, m, P.BORDER, 1))
+	t.set_stylebox("normal", "LineEdit", flat(P.BG, 8, m, P.BORDER_STRONG, 1))
 	t.set_stylebox("focus", "LineEdit", flat(Color.TRANSPARENT, 8, m, P.ACCENT, 2))
 	(t.get_stylebox("focus", "LineEdit") as StyleBoxFlat).draw_center = false
 	t.set_stylebox("read_only", "LineEdit", flat(P.SURFACE_DISABLED, 8, m, P.BORDER, 1))
@@ -373,7 +440,7 @@ static func _text_inputs(t: Theme) -> void:
 	t.set_color("font_uneditable_color", "LineEdit", P.TEXT_2)
 	t.set_color("font_placeholder_color", "LineEdit", P.TEXT_DISABLED)
 	t.set_color("font_selected_color", "LineEdit", P.TEXT)
-	t.set_color("selection_color", "LineEdit", Color(P.ACCENT, 0.25))
+	t.set_color("selection_color", "LineEdit", Color(P.ACCENT, 0.35))
 	t.set_color("caret_color", "LineEdit", P.ACCENT)
 	t.set_color("clear_button_color", "LineEdit", P.TEXT_2)
 	t.set_color("font_outline_color", "LineEdit", Color.TRANSPARENT)
@@ -407,21 +474,25 @@ static func _text_inputs(t: Theme) -> void:
 	t.set_color("down_disabled_icon_modulate", "SpinBox", P.TEXT_DISABLED)
 
 
-static func _rich_text(t: Theme, regular: Font, bold: Font) -> void:
+static func _rich_text(t: Theme, regular: Font, bold: Font, mono: Font) -> void:
 	t.set_stylebox("normal", "RichTextLabel", empty())
 	t.set_stylebox("focus", "RichTextLabel", empty())
 	t.set_color("default_color", "RichTextLabel", P.TEXT)
 	t.set_color("font_selected_color", "RichTextLabel", P.TEXT)
-	t.set_color("selection_color", "RichTextLabel", Color(P.ACCENT, 0.25))
+	t.set_color("selection_color", "RichTextLabel", Color(P.ACCENT, 0.35))
 	t.set_color("font_shadow_color", "RichTextLabel", Color.TRANSPARENT)
 	t.set_color("font_outline_color", "RichTextLabel", Color.TRANSPARENT)
 	t.set_font("normal_font", "RichTextLabel", regular)
 	t.set_font("bold_font", "RichTextLabel", bold)
-	t.set_font_size("normal_font_size", "RichTextLabel", 21)
-	t.set_font_size("bold_font_size", "RichTextLabel", 21)
+	t.set_font("mono_font", "RichTextLabel", mono)
+	t.set_font_size("normal_font_size", "RichTextLabel", 20)
+	t.set_font_size("bold_font_size", "RichTextLabel", 20)
+	t.set_font_size("mono_font_size", "RichTextLabel", 19)
 	t.set_constant("line_separation", "RichTextLabel", 6)
 	t.set_constant("outline_size", "RichTextLabel", 0)
 	t.set_type_variation("BodyText", "RichTextLabel")
+	t.set_color("default_color", "BodyText", P.TEXT_2)
+	t.set_font_size("normal_font_size", "BodyText", 20)
 
 
 # --- Procedural icons ----------------------------------------------------------------------
@@ -505,7 +576,7 @@ static func _dot_icon(size: int, radius: float, color: Color) -> ImageTexture:
 	return _texture(img)
 
 
-static func _switch_icon(checked: bool, track: Color) -> ImageTexture:
+static func _switch_icon(checked: bool, track: Color, knob: Color) -> ImageTexture:
 	var w := 50
 	var h := 28
 	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
@@ -516,7 +587,7 @@ static func _switch_icon(checked: bool, track: Color) -> ImageTexture:
 		for x in w:
 			var p := Vector2(x + 0.5, y + 0.5)
 			_blend(img, x, y, track, 0.5 - _rounded_rect_sdf(p, center, Vector2(w, h) / 2.0 - Vector2.ONE, h / 2.0 - 1.0))
-			_blend(img, x, y, P.SURFACE, 0.5 - ((p - knob_center).length() - (h / 2.0 - 4.0)))
+			_blend(img, x, y, knob, 0.5 - ((p - knob_center).length() - (h / 2.0 - 4.0)))
 	return _texture(img)
 
 
@@ -534,10 +605,10 @@ static func _checkbox_icon(checked: bool, color: Color) -> ImageTexture:
 				_blend(img, x, y, color, 0.5 - d)
 				var dist := minf(_segment_distance(p, Vector2(6.5, 12.5), Vector2(10.5, 16.5)),
 						_segment_distance(p, Vector2(10.5, 16.5), Vector2(17.5, 8.0)))
-				_blend(img, x, y, P.SURFACE, 1.5 + 0.5 - dist)
+				_blend(img, x, y, P.TEXT_ON_ACCENT, 1.5 + 0.5 - dist)
 			else:
 				_blend(img, x, y, color, 0.5 - d)
-				_blend(img, x, y, P.SURFACE, 0.5 - _rounded_rect_sdf(p, c, half - Vector2(2, 2), 4.5))
+				_blend(img, x, y, P.BG, 0.5 - _rounded_rect_sdf(p, c, half - Vector2(2, 2), 4.5))
 	return _texture(img)
 
 

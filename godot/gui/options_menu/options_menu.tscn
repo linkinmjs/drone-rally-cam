@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://hwv8he00j43l"]
 
 [ext_resource type="Script" uid="uid://co1mc7mfx4ba8" path="res://gui/options_menu/options_menu.gd" id="2"]
+[ext_resource type="Script" path="res://gui/components/menu_icon.gd" id="3_icon"]
 
 [node name="OptionsMenu" type="MarginContainer"]
 process_mode = 3
@@ -11,59 +12,187 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2")
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(560, 0)
+[node name="Layout" type="VBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_type_variation = &"Card"
+theme_override_constants/separation = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Title" type="Label" parent="PanelContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="Layout"]
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
 text = "OPT_TITLE"
 
-[node name="Subtitle" type="Label" parent="PanelContainer/VBoxContainer"]
+[node name="Subtitle" type="Label" parent="Layout"]
 layout_mode = 2
 theme_type_variation = &"CaptionLabel"
 text = "OPT_SUBTITLE"
 
-[node name="Spacer" type="Control" parent="PanelContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Spacer" type="Control" parent="Layout"]
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
-[node name="ButtonGame" type="Button" parent="PanelContainer/VBoxContainer"]
+[node name="Cards" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ButtonGame" type="Button" parent="Layout/Cards"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 250)
 layout_mode = 2
-theme_type_variation = &"MenuItemButton"
-text = "OPT_GAME"
-alignment = 0
+theme_type_variation = &"HubCard"
 
-[node name="ButtonAudio" type="Button" parent="PanelContainer/VBoxContainer"]
-unique_name_in_owner = true
+[node name="Margin" type="MarginContainer" parent="Layout/Cards/ButtonGame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Layout/Cards/ButtonGame/Margin"]
 layout_mode = 2
-theme_type_variation = &"MenuItemButton"
-text = "OPT_AUDIO"
-alignment = 0
+mouse_filter = 2
+theme_override_constants/separation = 10
 
-[node name="ButtonControls" type="Button" parent="PanelContainer/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"MenuItemButton"
-text = "OPT_CONTROLS"
-alignment = 0
-
-[node name="Spacer2" type="Control" parent="PanelContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 12)
-layout_mode = 2
-
-[node name="ButtonBack" type="Button" parent="PanelContainer/VBoxContainer"]
-unique_name_in_owner = true
+[node name="Icon" type="Control" parent="Layout/Cards/ButtonGame/Margin/Content"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("3_icon")
+kind = 0
+
+[node name="Spacer" type="Control" parent="Layout/Cards/ButtonGame/Margin/Content"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Layout/Cards/ButtonGame/Margin/Content"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "OPT_GAME"
+
+[node name="Description" type="Label" parent="Layout/Cards/ButtonGame/Margin/Content"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "OPT_GAME_DESC"
+autowrap_mode = 3
+
+[node name="ButtonAudio" type="Button" parent="Layout/Cards"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 250)
+layout_mode = 2
+theme_type_variation = &"HubCard"
+
+[node name="Margin" type="MarginContainer" parent="Layout/Cards/ButtonAudio"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Layout/Cards/ButtonAudio/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Icon" type="Control" parent="Layout/Cards/ButtonAudio/Margin/Content"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("3_icon")
+kind = 1
+
+[node name="Spacer" type="Control" parent="Layout/Cards/ButtonAudio/Margin/Content"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Layout/Cards/ButtonAudio/Margin/Content"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "OPT_AUDIO"
+
+[node name="Description" type="Label" parent="Layout/Cards/ButtonAudio/Margin/Content"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "OPT_AUDIO_DESC"
+autowrap_mode = 3
+
+[node name="ButtonControls" type="Button" parent="Layout/Cards"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 250)
+layout_mode = 2
+theme_type_variation = &"HubCard"
+
+[node name="Margin" type="MarginContainer" parent="Layout/Cards/ButtonControls"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Layout/Cards/ButtonControls/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Icon" type="Control" parent="Layout/Cards/ButtonControls/Margin/Content"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("3_icon")
+kind = 2
+
+[node name="Spacer" type="Control" parent="Layout/Cards/ButtonControls/Margin/Content"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Layout/Cards/ButtonControls/Margin/Content"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "OPT_CONTROLS"
+
+[node name="Description" type="Label" parent="Layout/Cards/ButtonControls/Margin/Content"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "OPT_CONTROLS_DESC"
+autowrap_mode = 3
+
+[node name="Spacer2" type="Control" parent="Layout"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+alignment = 2
+
+[node name="ButtonBack" type="Button" parent="Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"GhostButton"
 text = "UI_BACK"

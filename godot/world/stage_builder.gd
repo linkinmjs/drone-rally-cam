@@ -1,12 +1,16 @@
 ## Builds a rally stage from a seed and a hand-placed road: heightmap terrain, the road
 ## flattened into it, the driving line for the cars, trees and rocks. Same seed and points,
 ## same stage. Everything it creates lives under a "Generated" child that is never saved.
+## build() does it at once (editor, checks); build_async() does the same in steps behind the
+## loading screen, reporting its progress.
 @tool
 class_name StageBuilder
 extends Node3D
 
 
 signal built
+## Progress of build_async(), 0 to 1, with a translation key saying what is being built.
+signal build_progress(fraction: float, label: String)
 
 const GENERATED_NAME := "Generated"
 const TERRAIN_LAYER := 1
@@ -65,11 +69,15 @@ var driving_curve: Curve3D = null
 var road_samples: PackedVector3Array = []
 ## Tree positions and canopy radii, for other systems that want to avoid them.
 var tree_positions: PackedVector3Array = []
+## Build when entering the tree. The loading screen turns it off and calls build_async().
+var build_on_ready := true
 
 var _cells := 0
 var _heights: PackedFloat32Array = []
 var _road_distance: PackedFloat32Array = []
 var _is_built := false
+## Progress of the heightmap and road data on the worker thread, 0 to 1.
+var _data_progress := 0.0
 
 const ROAD_STEP := 2.0
 
@@ -77,7 +85,8 @@ const ROAD_STEP := 2.0
 func _ready() -> void:
 	if Engine.is_editor_hint() and not preview_in_editor:
 		return
-	build()
+	if build_on_ready:
+		build()
 
 
 func is_built() -> bool:
@@ -86,21 +95,71 @@ func is_built() -> bool:
 
 func build() -> void:
 	var start := Time.get_ticks_msec()
-	_clear_generated()
-	_cells = int(round(size / resolution))
-	_generate_heights()
-	_build_road_line()
-	_flatten_road()
-	var generated := Node3D.new()
-	generated.name = GENERATED_NAME
-	add_child(generated)
+	_prepare()
+	_build_data()
+	var generated := _add_generated()
 	_build_terrain(generated)
 	_build_road_mesh(generated)
 	_build_bounds(generated)
 	_build_scenery(generated)
+	_finish(start)
+
+
+## The same stage as build(), in steps: the heightmap and the road (arrays only) on a worker
+## thread, then the meshes and colliders on the main thread a piece per frame, so the window
+## keeps drawing the loading screen.
+func build_async() -> void:
+	var start := Time.get_ticks_msec()
+	_prepare()
+	build_progress.emit(0.0, "LOADING_TERRAIN")
+	var task := WorkerThreadPool.add_task(_build_data, false, "StageBuilder data")
+	while not WorkerThreadPool.is_task_completed(task):
+		build_progress.emit(_data_progress * 0.5, "LOADING_TERRAIN")
+		await get_tree().process_frame
+	WorkerThreadPool.wait_for_task_completion(task)
+	var generated := _add_generated()
+	build_progress.emit(0.5, "LOADING_TERRAIN")
+	await get_tree().process_frame
+	_build_terrain(generated)
+	build_progress.emit(0.6, "LOADING_ROAD")
+	await get_tree().process_frame
+	_build_road_mesh(generated)
+	_build_bounds(generated)
+	build_progress.emit(0.65, "LOADING_FOREST")
+	await get_tree().process_frame
+	await _build_scenery(generated, true)
+	_finish(start)
+	build_progress.emit(1.0, "LOADING_DONE")
+
+
+func _prepare() -> void:
+	_clear_generated()
+	_cells = int(round(size / resolution))
+	_data_progress = 0.0
+
+
+## Heightmap, road line and flattening: arrays and a Curve3D only, no nodes (it may run on a
+## worker thread).
+func _build_data() -> void:
+	_generate_heights()
+	_data_progress = 0.8
+	_build_road_line()
+	_data_progress = 0.9
+	_flatten_road()
+	_data_progress = 1.0
+
+
+func _add_generated() -> Node3D:
+	var generated := Node3D.new()
+	generated.name = GENERATED_NAME
+	add_child(generated)
+	return generated
+
+
+func _finish(start_msec: int) -> void:
 	_is_built = true
 	print("StageBuilder: stage built in %d ms (%d x %d samples, road %.0f m)" % [
-			Time.get_ticks_msec() - start, _cells + 1, _cells + 1, get_road_length()])
+			Time.get_ticks_msec() - start_msec, _cells + 1, _cells + 1, get_road_length()])
 	built.emit()
 
 
@@ -160,6 +219,7 @@ func _generate_heights() -> void:
 	_heights.resize(row * row)
 	var half := size * 0.5
 	for iz in row:
+		_data_progress = 0.8 * iz / row
 		var z := iz * resolution - half
 		for ix in row:
 			var x := ix * resolution - half
@@ -178,20 +238,7 @@ func _build_road_line() -> void:
 	if road_points.size() < 2:
 		return
 
-	var dense: PackedVector2Array = []
-	var count := road_points.size()
-	for i in count - 1:
-		var p0 := road_points[maxi(i - 1, 0)]
-		var p1 := road_points[i]
-		var p2 := road_points[i + 1]
-		var p3 := road_points[mini(i + 2, count - 1)]
-		if i == 0:
-			p0 = p1 - (p2 - p1)
-		if i + 2 >= count:
-			p3 = p2 + (p2 - p1)
-		for step in 24:
-			dense.append(_catmull_rom(p0, p1, p2, p3, step / 24.0))
-	dense.append(road_points[count - 1])
+	var dense := spline_points(road_points, 24)
 
 	# Resample at a constant spacing along the line.
 	var flat: PackedVector2Array = [dense[0]]
@@ -232,7 +279,29 @@ func _build_road_line() -> void:
 		driving_curve.add_point(point, -tangent, tangent)
 
 
-func _catmull_rom(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, t: float) -> Vector2:
+## The road line through `points` (centripetal Catmull-Rom), `steps` points per segment.
+## Also draws the maps of the menus without building the stage.
+static func spline_points(points: PackedVector2Array, steps := 24) -> PackedVector2Array:
+	var dense: PackedVector2Array = []
+	var count := points.size()
+	if count < 2:
+		return points
+	for i in count - 1:
+		var p0 := points[maxi(i - 1, 0)]
+		var p1 := points[i]
+		var p2 := points[i + 1]
+		var p3 := points[mini(i + 2, count - 1)]
+		if i == 0:
+			p0 = p1 - (p2 - p1)
+		if i + 2 >= count:
+			p3 = p2 + (p2 - p1)
+		for step in steps:
+			dense.append(_catmull_rom(p0, p1, p2, p3, float(step) / steps))
+	dense.append(points[count - 1])
+	return dense
+
+
+static func _catmull_rom(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, t: float) -> Vector2:
 	# Centripetal parametrization (alpha 0.5) avoids loops and cusps.
 	var t0 := 0.0
 	var t1 := t0 + sqrt(maxf(p0.distance_to(p1), 0.001))
@@ -489,7 +558,9 @@ func _build_bounds(parent: Node3D) -> void:
 	parent.add_child(walls)
 
 
-func _build_scenery(parent: Node3D) -> void:
+## Trees and rocks. With `in_steps` (build_async) it yields a frame every hundred trees while
+## it creates their colliders; without it, it never waits and runs at once.
+func _build_scenery(parent: Node3D, in_steps := false) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = scenery_seed
 	var forest := FastNoiseLite.new()
@@ -548,7 +619,11 @@ func _build_scenery(parent: Node3D) -> void:
 	tree_body.name = "TreeColliders"
 	tree_body.collision_layer = TERRAIN_LAYER
 	tree_body.collision_mask = 0
-	for xform in tree_transforms:
+	for i in tree_transforms.size():
+		if in_steps and i % 100 == 99:
+			build_progress.emit(0.65 + 0.3 * i / tree_transforms.size(), "LOADING_FOREST")
+			await get_tree().process_frame
+		var xform := tree_transforms[i]
 		var scale := xform.basis.get_scale()
 		var trunk := CollisionShape3D.new()
 		var trunk_shape := CylinderShape3D.new()

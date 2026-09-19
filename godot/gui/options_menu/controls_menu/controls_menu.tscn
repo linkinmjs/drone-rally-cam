@@ -39,9 +39,8 @@ theme_type_variation = &"TitleLabel"
 text = "CTRL_TITLE"
 
 [node name="LabelController" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_type_variation = &"SectionLabel"
+theme_type_variation = &"SectionHeader"
 text = "CTRL_ACTIVE_CONTROLLER"
 vertical_alignment = 2
 
@@ -56,9 +55,8 @@ size_flags_horizontal = 0
 text = "CTRL_DEFAULT_CONTROLLER"
 
 [node name="LabelDeadzone" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_type_variation = &"SectionLabel"
+theme_type_variation = &"SectionHeader"
 text = "CTRL_DEADZONE"
 vertical_alignment = 2
 
@@ -92,9 +90,8 @@ text = "CTRL_DEADZONE_HELP"
 autowrap_mode = 3
 
 [node name="LabelAxes" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_type_variation = &"SectionLabel"
+theme_type_variation = &"SectionHeader"
 text = "CTRL_AXES"
 vertical_alignment = 2
 
@@ -104,9 +101,8 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="LabelButtons" type="Label" parent="Columns/ControllerPanel/ControllerScroll/ControllerVBox"]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_type_variation = &"SectionLabel"
+theme_type_variation = &"SectionHeader"
 text = "CTRL_BUTTONS"
 vertical_alignment = 2
 
@@ -185,9 +181,8 @@ render_target_update_mode = 4
 [node name="WorldEnvironment" parent="Columns/BindingsPanel/BindingsVBox/DroneViewport/SubViewport" instance=ExtResource("4")]
 
 [node name="LabelActions" type="Label" parent="Columns/BindingsPanel/BindingsVBox"]
-custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_type_variation = &"SectionLabel"
+theme_type_variation = &"SectionHeader"
 text = "CTRL_BINDINGS"
 vertical_alignment = 2
 

@@ -1,4 +1,5 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: car volume.
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: car volume, one
+# row per volume.
 extends MenuScreen
 
 
@@ -16,7 +17,7 @@ extends MenuScreen
 
 func _ready() -> void:
 	initial_focus = master_volume
-	focus_groups = [$PanelContainer/VBoxContainer/Grid as Control,
+	focus_groups = [%Rows as Control,
 			$PanelContainer/VBoxContainer/Footer as Control]
 	super()
 	_bind(master_volume, master_volume_label, "master_volume")
@@ -56,4 +57,4 @@ func slider_to_volume(value: float) -> float:
 
 
 func update_slider_label(value: float) -> String:
-	return "%d%%" % [round(value)]
+	return "%d %%" % [round(value)]

@@ -94,17 +94,31 @@ static func _group_label(group: String, gamepad: bool) -> String:
 
 ## Name of the first binding of `action` on the gamepad or on keyboard and mouse.
 static func event_name(action: String, gamepad: bool) -> String:
+	return name_of(first_event(action, gamepad))
+
+
+## First binding of `action` on the gamepad or on keyboard and mouse, or null. KeyCap draws it.
+static func first_event(action: StringName, gamepad: bool) -> InputEvent:
 	if not InputMap.has_action(action):
-		return ""
+		return null
 	for event in InputMap.action_get_events(action):
-		if gamepad and event is InputEventJoypadButton:
-			return joy_button_name((event as InputEventJoypadButton).button_index)
-		if gamepad and event is InputEventJoypadMotion:
-			return joy_axis_name((event as InputEventJoypadMotion).axis)
-		if not gamepad and event is InputEventKey:
-			return key_name(event as InputEventKey)
-		if not gamepad and event is InputEventMouseButton:
-			return MOUSE_NAMES.get((event as InputEventMouseButton).button_index, "Mouse")
+		if gamepad and (event is InputEventJoypadButton or event is InputEventJoypadMotion):
+			return event
+		if not gamepad and (event is InputEventKey or event is InputEventMouseButton):
+			return event
+	return null
+
+
+## Name of a key, mouse button, gamepad button or axis ("" for null).
+static func name_of(event: InputEvent) -> String:
+	if event is InputEventJoypadButton:
+		return joy_button_name((event as InputEventJoypadButton).button_index)
+	if event is InputEventJoypadMotion:
+		return joy_axis_name((event as InputEventJoypadMotion).axis)
+	if event is InputEventKey:
+		return key_name(event as InputEventKey)
+	if event is InputEventMouseButton:
+		return MOUSE_NAMES.get((event as InputEventMouseButton).button_index, "Mouse")
 	return ""
 
 

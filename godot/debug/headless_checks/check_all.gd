@@ -18,6 +18,8 @@ const CHECKS: Array[String] = [
 	"res://debug/headless_checks/check_scoring_ui.gd",
 	"res://debug/headless_checks/check_gamepad_nav.gd",
 	"res://debug/headless_checks/check_visor.gd",
+	"res://debug/headless_checks/check_theme.gd",
+	"res://debug/headless_checks/check_flow.gd",
 ]
 
 ## The checks read and write their settings here, never in the player's user://config.
@@ -82,6 +84,8 @@ func _isolate_settings() -> void:
 	Audio.audio_settings_path = TEST_CONFIG_DIR.path_join("Audio.cfg")
 	GameSettings.game_settings_path = TEST_CONFIG_DIR.path_join("GameSettings.cfg")
 	QuadSettings.quad_settings_path = TEST_CONFIG_DIR.path_join("Quad.cfg")
+	Progress.save_path = TEST_CONFIG_DIR.path_join("progress.tres")
+	Progress.reset()
 	InputMap.load_from_project_settings()
 	GameSettings.reset_to_defaults()
 	QuadSettings.reset_quad()

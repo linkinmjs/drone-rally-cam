@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bsk1mpj5na1ou"]
 
 [ext_resource type="Script" uid="uid://dfuw6ecldhd6c" path="res://gui/pause_menu.gd" id="2"]
+[ext_resource type="Script" path="res://gui/components/logo.gd" id="3_logo"]
 
 [node name="PauseMenu" type="MarginContainer"]
 process_mode = 2
@@ -11,66 +12,146 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2")
 
-[node name="MenuColumn" type="VBoxContainer" parent="."]
+[node name="Layout" type="HBoxContainer" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(460, 0)
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 64
+
+[node name="MenuColumn" type="VBoxContainer" parent="Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Title" type="Label" parent="MenuColumn"]
+[node name="Logo" type="Control" parent="Layout/MenuColumn"]
 layout_mode = 2
-theme_type_variation = &"DisplayLabel"
-text = "MENU_PAUSED"
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("3_logo")
+logo_height = 96.0
 
-[node name="Subtitle" type="Label" parent="MenuColumn"]
+[node name="Spacer" type="Control" parent="Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Layout/MenuColumn"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "MENU_PAUSED"
+uppercase = true
+
+[node name="Subtitle" type="Label" parent="Layout/MenuColumn"]
 layout_mode = 2
 theme_type_variation = &"SubtitleLabel"
 text = "MENU_PAUSED_HINT"
 
-[node name="Spacer" type="Control" parent="MenuColumn"]
-custom_minimum_size = Vector2(0, 36)
+[node name="Spacer2" type="Control" parent="Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 
-[node name="ButtonResume" type="Button" parent="MenuColumn"]
+[node name="ButtonResume" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
 text = "MENU_RESUME"
 alignment = 0
 
-[node name="ButtonQuad" type="Button" parent="MenuColumn"]
+[node name="ButtonQuad" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
 text = "MENU_QUAD_SETTINGS"
 alignment = 0
 
-[node name="ButtonOptions" type="Button" parent="MenuColumn"]
+[node name="ButtonOptions" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
 text = "MENU_OPTIONS"
 alignment = 0
 
-[node name="ButtonHelp" type="Button" parent="MenuColumn"]
+[node name="ButtonHelp" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
 text = "MENU_HELP"
 alignment = 0
 
-[node name="ButtonRestart" type="Button" parent="MenuColumn"]
+[node name="ButtonRestart" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
 text = "MENU_RESTART_STAGE"
 alignment = 0
 
-[node name="ButtonQuit" type="Button" parent="MenuColumn"]
+[node name="ButtonQuit" type="Button" parent="Layout/MenuColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MenuItemButton"
-text = "MENU_QUIT"
+text = "MENU_BACK_TO_MENU"
 alignment = 0
+
+[node name="ContextColumn" type="VBoxContainer" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="StageCard" type="PanelContainer" parent="Layout/ContextColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(580, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"Card"
+
+[node name="Content" type="VBoxContainer" parent="Layout/ContextColumn/StageCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StageHeader" type="Label" parent="Layout/ContextColumn/StageCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "PAUSE_STAGE"
+uppercase = true
+
+[node name="StageName" type="Label" parent="Layout/ContextColumn/StageCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+
+[node name="StageStatus" type="Label" parent="Layout/ContextColumn/StageCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+
+[node name="Separator" type="HSeparator" parent="Layout/ContextColumn/StageCard/Content"]
+layout_mode = 2
+
+[node name="ClipsHeader" type="Label" parent="Layout/ContextColumn/StageCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "PAUSE_CLIPS"
+uppercase = true
+
+[node name="ClipList" type="HFlowContainer" parent="Layout/ContextColumn/StageCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+
+[node name="Separator2" type="HSeparator" parent="Layout/ContextColumn/StageCard/Content"]
+layout_mode = 2
+
+[node name="ControlsHeader" type="Label" parent="Layout/ContextColumn/StageCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "PAUSE_CONTROLS"
+uppercase = true
+
+[node name="ControlsGrid" type="GridContainer" parent="Layout/ContextColumn/StageCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 10
+columns = 2

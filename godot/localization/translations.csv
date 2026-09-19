@@ -85,15 +85,8 @@ In Stabilized the throttle must be centred to arm (where a gamepad stick rests);
 HELP_BATTERY_CRASH,"[b]Batería y choques[/b]
 La batería se gasta según el empuje: flotar consume poco; subir y acelerar, mucho. El visor muestra el tiempo de vuelo que queda. Al 20 % limita los motores; al 0 % el dron cae y no se puede volver a armar hasta guardarlo en la maleta, que cambia la batería. Un choque fuerte desarma el dron y se pierde la toma que estabas grabando. Si el dron queda donde no lo alcanzás, Back / Retroceso lo trae de vuelta al punto de despegue.","[b]Battery and crashes[/b]
 The battery drains with thrust: hovering uses little; climbing and speeding up, a lot. The viewfinder shows the flight time left. At 20 % it limits the motors; at 0 % the drone falls and cannot be armed again until you pack it in the case, which swaps the battery. A hard crash disarms the drone and loses the clip being recorded. If the drone ends up out of reach, Back / Backspace brings it back to the take-off spot."
-HELP_CONTROLS,"[b]Controles (gamepad / teclado y mouse)[/b]
-Caminando: stick izquierdo / WASD para moverte, stick derecho / mouse para mirar, X / E para desplegar o guardar el dron, Y / Tab para tomar el control, D-pad ↑ / M para la tablet.
-Pilotando: stick izquierdo / W-S y A-D para subir, bajar y girar; stick derecho / flechas o mouse para moverte. LB / Espacio arma y desarma, A / M cambia el modo de vuelo, X / C alterna la vista de piloto y la del gimbal, RB / clic graba, LT-RT / R-F o la rueda inclinan el gimbal, Back / Retroceso vuelve al punto de despegue, Y / Tab suelta el control.
-Start / Esc abre la pausa. Todo se puede reasignar en Opciones > Controles.
-Con un mando de PlayStation: A = ✕, B = ○, X = □, Y = △, LB/RB = L1/R1, LT/RT = L2/R2, Back = Share, Start = Options. Los carteles del juego usan los nombres de tu mando.","[b]Controls (gamepad / keyboard and mouse)[/b]
-Walking: left stick / WASD to move, right stick / mouse to look, X / E to deploy or pack the drone, Y / Tab to take the controller, D-pad ↑ / M for the tablet.
-Flying: left stick / W-S and A-D to climb, descend and turn; right stick / arrows or mouse to move. LB / Space arms and disarms, A / M changes the flight mode, X / C switches between the pilot and gimbal views, RB / click records, LT-RT / R-F or the wheel tilt the gimbal, Back / Backspace returns to the take-off spot, Y / Tab releases the controller.
-Start / Esc opens the pause menu. Everything can be rebound in Options > Controls.
-On a PlayStation controller: A = ✕, B = ○, X = □, Y = △, LB/RB = L1/R1, LT/RT = L2/R2, Back = Share, Start = Options. The on-screen hints use your controller's names."
+HELP_CONTROLS,[b]Controles[/b],[b]Controls[/b]
+HELP_CONTROLS_NOTE,Los botones que ves son los de tu mando y cambian solos si pasás al teclado. Todo se puede reasignar en Opciones > Controles.,The buttons shown are your controller's and switch by themselves when you use the keyboard. Everything can be rebound in Options > Controls.
 HELP_DEVICE,"[b]Qué necesitás[/b]
 Un gamepad (recomendado), teclado y mouse, o una radio con 4 ejes. Con una radio, calibrala en Opciones > Controles y bajá la zona muerta a 0.","[b]What you need[/b]
 A gamepad (recommended), keyboard and mouse, or a radio transmitter with 4 axes. With a radio, calibrate it in Options > Controls and set the deadzone to 0."
@@ -108,9 +101,18 @@ Elegí con qué modo arranca el dron en Ajustes del dron. La vista de piloto (X 
   •  Red, Acro: does not level itself; full control, meant for a radio.
   •  Flashing red, recovery: after a knock it levels itself and returns to your mode.
 Choose the starting mode in Drone settings. The pilot view (X / C) shows how the drone tilts; the gimbal view, the one that records, always stays level."
+HELP_FLYING,Pilotando,Flying
 HELP_GOAL,"[b]Tu trabajo[/b]
 Sos el camarógrafo aéreo de un rally. Antes de la largada abrí la tablet (D-pad ↑ o M) para ver el camino, dónde estás y cuándo pasa el auto por tu posición. Caminá hasta un buen lugar cerca del camino, desplegá el dron, despegá antes de que llegue el auto y grabá su paso. Cada toma recibe una nota de C a S y al final de la etapa ves todas tus tomas.","[b]Your job[/b]
 You are the aerial camera operator of a rally. Before the start, open the tablet (D-pad ↑ or M) to see the road, where you are and when the car reaches your spot. Walk to a good place near the road, deploy the drone, take off before the car arrives and record it going by. Every clip gets a grade from C to S and at the end of the stage you see all your clips."
+HELP_KEY_GIMBAL,Inclinar el gimbal,Tilt the gimbal
+HELP_KEY_INTERACT,Desplegar o guardar el dron,Deploy or pack the drone
+HELP_KEY_LOOK,Mirar,Look around
+HELP_KEY_PAUSE,Pausa,Pause
+HELP_KEY_PITCH_ROLL,Avanzar y moverte de costado,Move forward and sideways
+HELP_KEY_SPRINT,Trotar,Jog
+HELP_KEY_THROTTLE_YAW,"Subir, bajar y girar","Climb, descend and turn"
+HELP_KEY_WALK,Caminar,Walk
 HELP_MENU_NAVIGATION,"[b]Menús con el mando, el teclado o una radio[/b]
 Con gamepad: la cruceta o cualquiera de los dos sticks para moverte, ✕ para aceptar, ○ para volver y L1/R1 para pasar de columna o de pestaña (A, B, LB y RB en un mando Xbox). Sobre un deslizador o una lista, izquierda y derecha cambian el valor.
 Con teclado: flechas para moverte, Enter para aceptar, Esc para volver y Tab para pasar de columna.
@@ -132,6 +134,7 @@ While recording, every frame measures four things:
   •  Continuity (10 %): how many seconds in a row the shot works.
 Anything hiding the car (trees, terrain) lowers the frame. The clip grade: S with an average of 0.85 or more and at least 3 good seconds in a row; A from 0.70; B from 0.50; C otherwise or for clips under 1.5 seconds. While recording, the viewfinder bars show each measure live with a tip."
 HELP_TITLE,Ayuda,Help
+HELP_WALKING,Caminando,Walking
 HUD_ALT,ALT,ALT
 HUD_ALTITUDE,Altura y velocidad vertical,Height and vertical speed
 HUD_CAR_MARKER,Marcador del auto,Car marker
@@ -183,6 +186,19 @@ HUD_UNIT_KMH,km/h,km/h
 HUD_UNIT_M,m,m
 HUD_UNIT_MPS,m/s,m/s
 HUD_VS,VS,VS
+LOADING_DONE,Listo,Ready
+LOADING_FOREST,Plantando el bosque…,Planting the forest…
+LOADING_ROAD,Trazando el camino…,Laying out the road…
+LOADING_TERRAIN,Generando el terreno…,Generating the terrain…
+LOADING_TIP,Consejo,Tip
+MAIN_BEST_GRADE,Mejor nota,Best grade
+MAIN_NEXT,Próxima etapa,Next stage
+MAIN_PLAY,Jugar,Play
+MAIN_PROGRESS,Progreso,Progress
+MAIN_STAGES,Etapas,Stages
+MAIN_STAGES_DONE,Etapas con toma entregada,Stages with a clip delivered
+MENU_BACK_TO_MENU,Volver al menú,Back to menu
+MENU_BACK_TO_MENU_CONFIRM,¿Volver al menú principal? Se pierden las tomas de esta pasada.,Back to the main menu? The clips of this run are lost.
 MENU_HELP,Ayuda,Help
 MENU_OPTIONS,Opciones,Options
 MENU_PAUSED,En pausa,Paused
@@ -194,13 +210,20 @@ MENU_RESTART_CONFIRM,¿Reiniciar la etapa? Se pierden las tomas de esta pasada.,
 MENU_RESTART_STAGE,Reiniciar etapa,Restart stage
 MENU_RESUME,Continuar,Resume
 OPT_AUDIO,Audio,Audio
+OPT_AUDIO_DESC,"Volumen general, de los motores, del auto y de la interfaz.","Master, motors, car and interface volume."
 OPT_CONTROLS,Controles,Controls
+OPT_CONTROLS_DESC,"Mando activo, zona muerta, calibración y asignaciones.","Active controller, dead zone, calibration and bindings."
 OPT_GAME,Juego y HUD,Game and HUD
+OPT_GAME_DESC,"Navegación con sticks, visor del dron y presets del HUD.","Stick navigation, the drone viewfinder and HUD presets."
 OPT_SUBTITLE,Ajustá el juego a tu gusto,Make the game yours
 OPT_TITLE,Opciones,Options
 P," R e Y: máximo de cada eje en grados por segundo.""","Horizontal axis: stick position, from full left to full right.
 Vertical axis: rotation speed requested by that position.
 P, R and Y: maximum of each axis in degrees per second."
+PAUSE_CLIPS,Tomas entregadas,Clips delivered
+PAUSE_CONTROLS,Controles,Controls
+PAUSE_NO_CLIPS,Todavía no entregaste ninguna toma.,No clips delivered yet.
+PAUSE_STAGE,Etapa,Stage
 QUAD_ACRO_PLUS,Acro+,Acro+
 QUAD_BATTERY_WEIGHT,Peso de batería,Battery weight
 QUAD_CAMERA_ANGLE,Ángulo de cámara,Camera angle
@@ -309,8 +332,35 @@ QUAD_RC_RATE,RC Rate,RC Rate
 QUAD_RESET_QUAD,Restablecer dron,Reset quad
 QUAD_RESET_RATES,Restablecer rates,Reset rates
 QUAD_ROLL,Roll,Roll
+QUAD_SECTION_CAMERA,Cámara FPV,FPV camera
+QUAD_SECTION_FLIGHT,Vuelo,Flight
+QUAD_SECTION_RATES,Rates,Rates
+QUAD_SECTION_WEIGHT,Peso,Weight
 QUAD_TITLE,Ajustes del dron,Quad settings
 QUAD_YAW,Yaw,Yaw
+RESULTS_BEST,Mejor nota de la pasada,Best grade of the run
+RESULTS_FIRST,Primera nota en esta etapa,First grade on this stage
+RESULTS_MENU,Menú principal,Main menu
+RESULTS_NEXT,Siguiente: Etapa %d,Next: Stage %d
+RESULTS_RECORD,¡Nuevo récord!,New record!
+RESULTS_RETRY,Repetir etapa,Retry stage
+RESULTS_UNLOCKED,Desbloqueaste la %s,Unlocked: %s
+STAGES_SUBTITLE,Elegí dónde filmar el paso del auto,Choose where to film the car go by
+STAGE_CLIPS,Tomas entregadas: %d,Clips delivered: %d
+STAGE_LOCKED,Se abre con una toma %s o mejor en la %s.,Opens with a %s clip or better on %s.
+STAGE_LOCKED_TITLE,Bloqueada,Locked
+STAGE_NUMBER,Etapa %d,Stage %d
+TIP_BATTERY,La batería dura unos tres minutos flotando: despegá cuando el auto esté por llegar.,The battery lasts about three minutes hovering: take off when the car is about to arrive.
+TIP_CRASH,Un choque fuerte pierde la toma que estabas grabando.,A hard crash loses the clip you were recording.
+TIP_GIMBAL,Inclinar el gimbal hacia el camino ayuda a encuadrar desde más alto.,Tilting the gimbal toward the road helps framing from higher up.
+TIP_STABILIZED,"En Estabilizado, al soltar los sticks el dron se queda quieto donde está.","In Stabilized, releasing the sticks leaves the drone still where it is."
+TIP_STABLE,Mové el dron con suavidad: la estabilidad de la imagen pesa en la nota.,Move the drone smoothly: a steady image weighs in the grade.
+TIP_STREAK,Una toma S necesita tres segundos seguidos de buen encuadre.,An S clip needs three seconds in a row of good framing.
+TIP_TABLET,Abrí la tablet para ver el mapa y cuándo pasa el auto cerca tuyo.,Open the tablet to see the map and when the car passes near you.
+TIP_THIRDS,El productor premia el auto centrado o sobre un punto de los tercios.,The producer rewards the car centred or on a rule of thirds point.
+TITLE_PRESS,Pulsá,Press
+TITLE_TAGLINE,Filmá el rally desde el aire,Film the rally from the air
+TITLE_TO_START,para empezar,to start
 UI_BACK,Volver,Back
 UI_CANCEL,Cancelar,Cancel
 UI_CONFIRM,Confirmar,Confirm

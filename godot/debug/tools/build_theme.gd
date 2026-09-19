@@ -1,6 +1,6 @@
 extends SceneTree
 ## Regenerates the menu theme from UIPalette.
-## Usage: godot --headless --path . -s res://tools/build_theme.gd
+## Usage: godot --headless --path godot -s res://debug/tools/build_theme.gd
 
 
 const OUTPUT := "res://gui/theme/main_theme.tres"

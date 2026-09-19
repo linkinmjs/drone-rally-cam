@@ -1,8 +1,15 @@
 ## One stage of the rally: the player arrives on foot, the car starts after a countdown,
 ## the player films it from the drone and the stage ends when the car reaches the finish.
+##
+## Played from the menus, SceneTransition calls prepare() with the stage of the catalog and a
+## world that builds in steps behind the loading screen. Opened on its own (editor, checks,
+## tour) it plays the world it was saved with, built at once.
 class_name Stage
 extends Node3D
 
+
+## The world is built and everything is set up: the stage can be played.
+signal stage_ready
 
 enum Phase {WAITING_START, RACING, FINISHED}
 
@@ -23,11 +30,18 @@ const CHECKLIST: Array[String] = [
 ]
 
 @export var stage_name := "Etapa 1"
+## Stage of the catalog played when the scene is opened on its own (its world is the one saved
+## in the scene).
+@export var stage_id := &"stage_01"
+var stage_info: StageInfo = null
+var is_stage_ready := false
 ## Seconds between arriving and the car's start. Waiting and positioning is part of the game.
 @export var start_delay := 45.0
 
 var phase := Phase.WAITING_START
 var clips: Array[ShotReport] = []
+## The stage status line ("Auto 7 en carrera · 1:23").
+var status_text := ""
 var _countdown := 0.0
 var _race_time := 0.0
 var _motors_bus := -1
@@ -55,13 +69,45 @@ var _pending_abort := ""
 @onready var summary := $UI/ClipSummary as ClipSummary
 @onready var menus := $Menus as CanvasLayer
 @onready var tablet := $UI/Tablet as Tablet
+## Viewfinder, on-foot overlay, tablet and clip summary: hidden behind the menus.
+@onready var ui_layer := $UI as CanvasLayer
+
+
+## Sets the stage up before it enters the tree: the world of `info` in place of the saved one
+## and, behind the loading screen, a world that builds in steps.
+func prepare(info: StageInfo, build_in_steps := false) -> void:
+	stage_info = info
+	if info:
+		stage_id = info.id
+		var current := get_node("World")
+		if not info.scene.is_empty() and current.scene_file_path != info.scene:
+			var index := current.get_index()
+			remove_child(current)
+			current.free()
+			var replacement := (load(info.scene) as PackedScene).instantiate()
+			replacement.name = "World"
+			add_child(replacement)
+			move_child(replacement, index)
+	if build_in_steps:
+		(get_node("World") as StageWorld).defer_build()
 
 
 func _ready() -> void:
+	set_process(false)
 	var controls_error := Controls.load_input_map(true)
 	if not controls_error.is_empty():
 		push_warning(controls_error)
 	_motors_bus = AudioServer.get_bus_index(&"Motors")
+	if stage_info == null:
+		var catalog := StageCatalog.get_default()
+		stage_info = catalog.find_by_scene(world.scene_file_path)
+		if stage_info == null:
+			stage_info = catalog.find(stage_id)
+	if stage_info:
+		stage_id = stage_info.id
+		stage_name = stage_info.title()
+	if not world.is_ready:
+		await world.build_ready()
 
 	player.global_transform = world.get_player_spawn_transform()
 	drone.stow()
@@ -87,23 +133,28 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_update_route_offset()
 	tablet.open(briefing(), 10.0)
+	set_process(true)
+	is_stage_ready = true
+	stage_ready.emit()
 
 
 ## Three lines for the start: the car, the stage and what to do.
 func briefing() -> String:
 	var car := world.car
-	return ("Sos el camarógrafo aéreo del rally. El %s larga en %s y cruza los %.1f km del tramo "
+	return ("Sos el camarógrafo aéreo del rally. El %s larga en %s y cruza los %s km del tramo "
 			+ "en unos %s.\n"
 			+ "Elegí un lugar cerca del camino, desplegá el dron %s, tomá el control %s y grabá "
 			+ "su paso con el gimbal %s.\n"
 			+ "El punto naranja del mapa es donde el auto pasa más cerca tuyo. Abrí el mapa con %s.") % [
-			car.driver_name, HudStyle.format_time(start_delay), car.get_route_length() / 1000.0,
+			car.driver_name, HudStyle.format_time(start_delay), HudStyle.decimal(car.get_route_length() / 1000.0),
 			HudStyle.format_time(car.expected_time_at(car.get_route_length())),
 			InputHints.button("interact"), InputHints.button("pilot_toggle"),
 			InputHints.button("rec_toggle"), InputHints.button("show_map")]
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_stage_ready:
+		return
 	if event.is_action("pause_menu") and event.is_pressed() and not event.is_echo():
 		get_viewport().set_input_as_handled()
 		open_pause_menu()
@@ -119,14 +170,17 @@ func open_pause_menu() -> void:
 	if get_tree().paused:
 		return
 	get_tree().paused = true
+	ui_layer.visible = false
 	pause_menu = PACKED_PAUSE_MENU.instantiate() as PauseMenu
 	menus.add_child(pause_menu)
+	pause_menu.show_stage(stage_summary(), clips)
 	var _discard := pause_menu.resumed.connect(_on_pause_resumed)
 	_discard = pause_menu.restart_requested.connect(restart)
+	_discard = pause_menu.menu_requested.connect(go_to_menu)
 	UI.show_mouse()
 
 
-## Pauses the game and lists the clips of the stage.
+## Pauses the game, saves the run (best grade, unlocks) and lists the clips of the stage.
 func show_results() -> void:
 	if results:
 		return
@@ -134,16 +188,28 @@ func show_results() -> void:
 		pause_menu.queue_free()
 		pause_menu = null
 	get_tree().paused = true
+	ui_layer.visible = false
+	var run := Progress.record_run(stage_id, clips)
 	results = PACKED_RESULTS.instantiate() as ResultsScreen
 	menus.add_child(results)
-	results.show_results(world.car.driver_name, clips)
+	results.show_results(world.car.driver_name, clips, run)
 	var _discard := results.restart_requested.connect(restart)
+	_discard = results.next_requested.connect(play_stage)
+	_discard = results.menu_requested.connect(go_to_menu)
 	UI.show_mouse()
 
 
+## Plays this stage again from the start, behind the loading screen.
 func restart() -> void:
-	get_tree().paused = false
-	var _err := get_tree().reload_current_scene()
+	play_stage(stage_info)
+
+
+func play_stage(info: StageInfo) -> void:
+	SceneTransition.start_stage(info if info else stage_info)
+
+
+func go_to_menu() -> void:
+	SceneTransition.go_to_menu()
 
 
 ## Adapted from drone-simulator's Level._on_resume: the button or stick gesture used to
@@ -156,6 +222,7 @@ func _on_pause_resumed() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	pause_menu.queue_free()
 	pause_menu = null
+	ui_layer.visible = true
 	await get_tree().process_frame
 	var deadline := Time.get_ticks_msec() + RESUME_RELEASE_TIMEOUT_MSEC
 	while is_inside_tree() and _resume_input_held() and Time.get_ticks_msec() < deadline:
@@ -284,12 +351,12 @@ func timetable() -> Array[PackedStringArray]:
 			else "largó"
 	rows.append(PackedStringArray(["LARGADA · %s" % car.driver_name, start]))
 	var eta := seconds_until_car_at(_route_offset)
-	rows.append(PackedStringArray(["TU PUNTO DEL CAMINO · km %.1f" % [_route_offset / 1000.0],
+	rows.append(PackedStringArray(["TU PUNTO DEL CAMINO · km %s" % HudStyle.decimal(_route_offset / 1000.0),
 			"llega en %s" % HudStyle.format_time(ceilf(eta)) if eta > 0.0 else "ya pasó"]))
 	rows.append(PackedStringArray(["DISTANCIA AL CAMINO", "%d m" % [roundi(_road_distance)]]))
 	var length := car.get_route_length()
 	var finish_eta := seconds_until_car_at(length)
-	rows.append(PackedStringArray(["META · km %.1f" % [length / 1000.0],
+	rows.append(PackedStringArray(["META · km %s" % HudStyle.decimal(length / 1000.0),
 			"llegó" if car.has_finished else "llega en %s" % HudStyle.format_time(ceilf(finish_eta))]))
 	rows.append(PackedStringArray(["TOMAS", "%d" % clips.size()]))
 	return rows
@@ -343,8 +410,14 @@ func _on_control_state_changed(state: ControlState.State) -> void:
 
 
 func _set_status(text: String) -> void:
+	status_text = text
 	hud.set_status(text)
 	visor.set_status(text)
+
+
+## What the pause menu tells about the stage: its name and where the race is.
+func stage_summary() -> Dictionary:
+	return {"stage": stage_name, "status": status_text}
 
 
 ## Tells the player something: on the viewfinder's message line while piloting, as a notice

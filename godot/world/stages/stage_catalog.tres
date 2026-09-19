@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="StageCatalog" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://world/stages/stage_catalog.gd" id="1_catalog"]
+[ext_resource type="Script" path="res://world/stages/stage_info.gd" id="2_info"]
+
+[sub_resource type="Resource" id="StageInfo_01"]
+script = ExtResource("2_info")
+id = &"stage_01"
+number = 1
+display_name = "Bosque de pinos"
+scene = "res://world/stages/stage_01.tscn"
+description = "Ripio entre pinos y lomas suaves: una curva rápida tras otra."
+length_km = 1.4
+unlock_after = &""
+unlock_grade = "B"
+
+[sub_resource type="Resource" id="StageInfo_02"]
+script = ExtResource("2_info")
+id = &"stage_02"
+number = 2
+display_name = "Lomas del valle"
+scene = "res://world/stages/stage_02.tscn"
+description = "Más largo y con horquillas cerradas entre colinas altas."
+length_km = 1.5
+unlock_after = &"stage_01"
+unlock_grade = "B"
+
+[resource]
+script = ExtResource("1_catalog")
+stages = Array[ExtResource("2_info")]([SubResource("StageInfo_01"), SubResource("StageInfo_02")])

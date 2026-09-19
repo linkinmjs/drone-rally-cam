@@ -1,5 +1,5 @@
-# Modified from drone-simulator (GPL-3.0), 2026: button names read from the input map
-# (PlayStation or Xbox glyphs), section chip, gamepad hints while a pad is in use.
+# Modified from drone-simulator (GPL-3.0), 2026: button glyphs drawn by KeyCap from the input
+# map (PlayStation or Xbox), section chip, gamepad hints while a pad is in use.
 class_name ControlHints
 extends HBoxContainer
 ## Footer of every menu screen: shows how to navigate with the device in use and
@@ -93,10 +93,15 @@ func _rebuild() -> void:
 		var chip := HBoxContainer.new()
 		chip.add_theme_constant_override(&"separation", 8)
 		chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var key := Label.new()
-		key.theme_type_variation = &"KeyCap"
-		key.text = hint[0]
-		chip.add_child(key)
+		var actions: Array = hint[2]
+		if actions.is_empty():
+			var fixed := KeyCap.new()
+			fixed.fixed_text = hint[0]
+			chip.add_child(fixed)
+		for action: StringName in actions:
+			var key := KeyCap.new()
+			key.action = action
+			chip.add_child(key)
 		var label := Label.new()
 		label.theme_type_variation = &"HintLabel"
 		label.text = hint[1]
@@ -104,26 +109,29 @@ func _rebuild() -> void:
 		_chips.add_child(chip)
 
 
-## The chips of the footer as [key, text] pairs, for the device in use.
+## The chips of the footer as [key text, label, actions drawn as KeyCaps] for the device in
+## use. With no actions, the key text is drawn as it is (radio sticks).
 func hint_list() -> Array:
 	var hints: Array = []
 	var radio_sticks := UI.input_kind == UI.InputKind.STICKS \
 			and StickNavigation.scheme != StickNavigation.Scheme.GAMEPAD
 	if radio_sticks:
 		if StickNavigation.scheme == StickNavigation.Scheme.YAW_SELECT:
-			hints = [["Pitch ↕", "UI_HINT_NAVIGATE"], ["Roll ↔", "UI_HINT_ADJUST"],
-					["Yaw →", "UI_HINT_ACCEPT"], ["Yaw ←", "UI_HINT_BACK"]]
+			hints = [["Pitch ↕", "UI_HINT_NAVIGATE", []], ["Roll ↔", "UI_HINT_ADJUST", []],
+					["Yaw →", "UI_HINT_ACCEPT", []], ["Yaw ←", "UI_HINT_BACK", []]]
 		else:
-			hints = [["Pitch ↕", "UI_HINT_NAVIGATE"], ["Roll →", "UI_HINT_ACCEPT"],
-					["Roll ←", "UI_HINT_BACK"]]
+			hints = [["Pitch ↕", "UI_HINT_NAVIGATE", []], ["Roll →", "UI_HINT_ACCEPT", []],
+					["Roll ←", "UI_HINT_BACK", []]]
 		return hints
 	var pad := InputHints.menu_uses_pad()
-	hints.append([tr("UI_KEY_DPAD") if pad else "↑ ↓", "UI_HINT_NAVIGATE"])
-	hints.append([InputHints.menu_key(&"ui_accept"), "UI_HINT_ACCEPT"])
-	hints.append([InputHints.menu_key(&"ui_cancel"), "UI_HINT_BACK"])
+	hints.append([tr("UI_KEY_DPAD") if pad else "↑ ↓", "UI_HINT_NAVIGATE",
+			[KeyCap.GLYPH_DPAD if pad else KeyCap.GLYPH_ARROWS]])
+	hints.append([InputHints.menu_key(&"ui_accept"), "UI_HINT_ACCEPT", [&"ui_accept"]])
+	hints.append([InputHints.menu_key(&"ui_cancel"), "UI_HINT_BACK", [&"ui_cancel"]])
 	if owner_screen and owner_screen.has_method(&"has_sections") and owner_screen.call(&"has_sections"):
 		hints.append(["%s %s" % [InputHints.menu_key(&"ui_focus_prev"),
-				InputHints.menu_key(&"ui_focus_next")], "UI_HINT_SECTION"])
+				InputHints.menu_key(&"ui_focus_next")], "UI_HINT_SECTION",
+				[&"ui_focus_prev", &"ui_focus_next"]])
 	return hints
 
 

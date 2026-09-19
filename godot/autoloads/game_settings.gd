@@ -45,8 +45,9 @@ var hud_config := {"fps": 10, "horizon_mode": "camera"}
 ## `stick_nav`: how the sticks drive the menus (StickNavigation.Scheme). It replaced
 ## `nav_scheme`, whose saved 0 (Betaflight) must not carry over now that gamepads have their
 ## own scheme. `stick_deadzone`: radial deadzone of the flight sticks (gamepads rest a few
-## percent off-centre; 0 for a real radio).
-var game_config := {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08}
+## percent off-centre; 0 for a real radio). `menu_blur`: the scene behind the menus is
+## blurred (it reads the screen; the graphics options of plan 07 expose it).
+var game_config := {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08, "menu_blur": true}
 
 
 func _init() -> void:
@@ -114,6 +115,15 @@ func set_stick_deadzone(value: float) -> void:
 	save_game_settings()
 
 
+func menu_blur_enabled() -> bool:
+	return bool(game_config["menu_blur"])
+
+
+func set_menu_blur(enabled: bool) -> void:
+	game_config["menu_blur"] = enabled
+	save_game_settings()
+
+
 func load_hud_config() -> void:
 	var config := ConfigFile.new()
 	var err := config.load(game_settings_path)
@@ -178,7 +188,7 @@ func get_hud_preset() -> HudPreset:
 
 ## Restores the defaults in memory, without saving (used by the automated checks).
 func reset_to_defaults() -> void:
-	game_config = {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08}
+	game_config = {"stick_nav": STICK_NAV_DEFAULT, "stick_deadzone": 0.08, "menu_blur": true}
 	var defaults: Dictionary = HUD_PRESETS[HudPreset.PILOT]
 	for key: String in defaults:
 		hud_config[key] = defaults[key]

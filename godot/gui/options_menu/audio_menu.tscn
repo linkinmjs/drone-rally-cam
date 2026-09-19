@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bsa5oyivvnqp0"]
 
 [ext_resource type="Script" uid="uid://fm5t8hbpkkhh" path="res://gui/options_menu/audio_menu.gd" id="2"]
+[ext_resource type="Script" path="res://gui/components/slider_row.gd" id="3_row"]
 
 [node name="AudioMenu" type="MarginContainer"]
 process_mode = 3
@@ -12,7 +13,7 @@ grow_vertical = 2
 script = ExtResource("2")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(880, 0)
+custom_minimum_size = Vector2(900, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -36,27 +37,35 @@ text = "AUD_SUBTITLE"
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="Grid" type="GridContainer" parent="PanelContainer/VBoxContainer"]
+[node name="Rows" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 28
-theme_override_constants/v_separation = 22
-columns = 3
+theme_override_constants/separation = 10
 
-[node name="MasterLabel" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MasterRow" type="PanelContainer" parent="PanelContainer/VBoxContainer/Rows"]
+layout_mode = 2
+theme_type_variation = &"SliderRow"
+script = ExtResource("3_row")
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer/VBoxContainer/Rows/MasterRow"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="MasterLabel" type="Label" parent="PanelContainer/VBoxContainer/Rows/MasterRow/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "AUD_MASTER"
 
-[node name="MasterSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MasterSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Rows/MasterRow/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_vertical = 4
 step = 5.0
 value = 100.0
 rounded = true
 
-[node name="MasterValue" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MasterValue" type="Label" parent="PanelContainer/VBoxContainer/Rows/MasterRow/Row"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
@@ -64,21 +73,30 @@ theme_type_variation = &"ValueLabel"
 text = "100%"
 horizontal_alignment = 2
 
-[node name="MotorsLabel" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MotorsRow" type="PanelContainer" parent="PanelContainer/VBoxContainer/Rows"]
+layout_mode = 2
+theme_type_variation = &"SliderRow"
+script = ExtResource("3_row")
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer/VBoxContainer/Rows/MotorsRow"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="MotorsLabel" type="Label" parent="PanelContainer/VBoxContainer/Rows/MotorsRow/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "AUD_MOTORS"
 
-[node name="MotorsSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MotorsSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Rows/MotorsRow/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_vertical = 4
 step = 5.0
 value = 100.0
 rounded = true
 
-[node name="MotorsValue" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MotorsValue" type="Label" parent="PanelContainer/VBoxContainer/Rows/MotorsRow/Row"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
@@ -86,21 +104,30 @@ theme_type_variation = &"ValueLabel"
 text = "100%"
 horizontal_alignment = 2
 
-[node name="CarLabel" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="CarRow" type="PanelContainer" parent="PanelContainer/VBoxContainer/Rows"]
+layout_mode = 2
+theme_type_variation = &"SliderRow"
+script = ExtResource("3_row")
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer/VBoxContainer/Rows/CarRow"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="CarLabel" type="Label" parent="PanelContainer/VBoxContainer/Rows/CarRow/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "AUD_CAR"
 
-[node name="CarSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="CarSlider" type="HSlider" parent="PanelContainer/VBoxContainer/Rows/CarRow/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_vertical = 4
 step = 5.0
 value = 100.0
 rounded = true
 
-[node name="CarValue" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="CarValue" type="Label" parent="PanelContainer/VBoxContainer/Rows/CarRow/Row"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
@@ -108,21 +135,30 @@ theme_type_variation = &"ValueLabel"
 text = "100%"
 horizontal_alignment = 2
 
-[node name="UILabel" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="UIRow" type="PanelContainer" parent="PanelContainer/VBoxContainer/Rows"]
+layout_mode = 2
+theme_type_variation = &"SliderRow"
+script = ExtResource("3_row")
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer/VBoxContainer/Rows/UIRow"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="UILabel" type="Label" parent="PanelContainer/VBoxContainer/Rows/UIRow/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "AUD_UI"
 
-[node name="UISlider" type="HSlider" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="UISlider" type="HSlider" parent="PanelContainer/VBoxContainer/Rows/UIRow/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_vertical = 4
 step = 5.0
 value = 80.0
 rounded = true
 
-[node name="UIValue" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="UIValue" type="Label" parent="PanelContainer/VBoxContainer/Rows/UIRow/Row"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
@@ -130,18 +166,24 @@ theme_type_variation = &"ValueLabel"
 text = "80%"
 horizontal_alignment = 2
 
-[node name="MuteLabel" type="Label" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MuteRow" type="PanelContainer" parent="PanelContainer/VBoxContainer/Rows"]
+layout_mode = 2
+theme_type_variation = &"SliderRow"
+script = ExtResource("3_row")
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer/VBoxContainer/Rows/MuteRow"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="MuteLabel" type="Label" parent="PanelContainer/VBoxContainer/Rows/MuteRow/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "AUD_MUTE"
 
-[node name="MuteCheck" type="CheckButton" parent="PanelContainer/VBoxContainer/Grid"]
+[node name="MuteCheck" type="CheckButton" parent="PanelContainer/VBoxContainer/Rows/MuteRow/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="MuteSpacer" type="Control" parent="PanelContainer/VBoxContainer/Grid"]
-layout_mode = 2
+size_flags_horizontal = 8
 
 [node name="Footer" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2

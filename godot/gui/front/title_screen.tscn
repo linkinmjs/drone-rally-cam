@@ -1,0 +1,108 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://gui/front/title_screen.gd" id="1_script"]
+[ext_resource type="Script" path="res://gui/components/logo.gd" id="2_logo"]
+[ext_resource type="Script" path="res://gui/components/key_cap.gd" id="3_key"]
+
+[sub_resource type="Gradient" id="Gradient_shade"]
+offsets = PackedFloat32Array(0, 0.45, 1)
+colors = PackedColorArray(0.0784314, 0.0862745, 0.101961, 0, 0.0784314, 0.0862745, 0.101961, 0.25, 0.0784314, 0.0862745, 0.101961, 0.92)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture_shade"]
+gradient = SubResource("Gradient_shade")
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+
+[node name="TitleScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Shade" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture_shade")
+expand_mode = 1
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 120.0
+offset_top = -470.0
+offset_right = -120.0
+offset_bottom = -96.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 18
+alignment = 2
+
+[node name="Logo" type="Control" parent="Content"]
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("2_logo")
+logo_height = 220.0
+blink = true
+
+[node name="Tagline" type="Label" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"SubtitleLabel"
+text = "TITLE_TAGLINE"
+
+[node name="Spacer" type="Control" parent="Content"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Prompt" type="HBoxContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Before" type="Label" parent="Content/Prompt"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "TITLE_PRESS"
+
+[node name="Key" type="Control" parent="Content/Prompt"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_key")
+action = &"ui_accept"
+cap_height = 36.0
+
+[node name="After" type="Label" parent="Content/Prompt"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "TITLE_TO_START"
+
+[node name="Version" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -64.0
+offset_right = -56.0
+offset_bottom = -36.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_type_variation = &"HintLabel"
+horizontal_alignment = 2

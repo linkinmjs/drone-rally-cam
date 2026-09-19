@@ -1,5 +1,5 @@
-# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: shows the name of
-# the bound gamepad button.
+# Modified from GodotDrone (GPL-3.0, (c) Cykyrios) via drone-simulator, 2026: shows the bound
+# gamepad button as a KeyCap.
 class_name GUIControllerBinding
 extends VBoxContainer
 
@@ -12,7 +12,9 @@ var action_idx := -1
 var action := ""
 var label := Label.new()
 var controller_button := GUIControllerButton.new()
-## Name of the gamepad button or axis bound to the action, read from the input map.
+## The gamepad button or axis bound to the action, read from the input map; "unbound" text
+## when there is none.
+var binding_cap := KeyCap.new()
 var binding_name := Label.new()
 var axis_range: GUIControllerAxisRange = null
 var device := -1
@@ -31,6 +33,10 @@ func _ready() -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(row)
 	row.add_child(controller_button)
+	binding_cap.gamepad_only = true
+	binding_cap.cap_height = 26.0
+	binding_cap.action = action
+	row.add_child(binding_cap)
 	binding_name.theme_type_variation = &"CaptionLabel"
 	binding_name.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(binding_name)
@@ -142,6 +148,9 @@ func update_binding(event: InputEvent) -> void:
 func refresh_binding_name() -> void:
 	var text := InputHints.event_name(action, true)
 	binding_name.text = text if not text.is_empty() else tr("CTRL_UNBOUND")
+	binding_name.visible = text.is_empty()
+	binding_cap.visible = not text.is_empty()
+	binding_cap.action = action
 
 
 func remove_binding() -> void:

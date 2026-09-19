@@ -4,7 +4,7 @@ Sos un operador de cámara aérea solitario en un rally. Llegás a pie al tramo,
 
 El diseño completo está en [docs/Drone Rally Cam — Documento de diseño.pdf](docs/). No es la palabra final: el juego va a cambiar a medida que lo probemos.
 
-## Estado: Fase 1 + iteración de legibilidad y controles
+## Estado: Fase 1, iteración de legibilidad y controles, y front-end (v0.3.0)
 
 La Fase 1 responde una sola pregunta: **¿es divertido esperar y filmar un solo paso de un auto?**
 
@@ -22,11 +22,19 @@ La segunda iteración suma lo que faltaba para entender el juego y volar como en
 - **Vista de piloto.** Una cámara FPV fija al chasis que muestra cómo se inclina el dron. Se alterna con la del gimbal, que es la que graba.
 - **Puntaje legible.** Barras en vivo con un consejo mientras grabás, resumen con el motivo de cada aspecto y pantalla de resultados al final.
 - **Guía de pilotaje.** Dice qué hacer en cada momento (armar, despegar, encuadrar, grabar, aterrizar) y dónde poner el acelerador.
-- **Menús del simulador.** Pausa, Opciones (Juego y HUD, Audio, Controles con calibración y zona muerta), Ajustes del dron (rates, expo, modo por defecto, ángulo y campo de visión de la cámara FPV) y Ayuda.
+- **Menús propios.** Identidad "Rally al atardecer": fondos oscuros cálidos, texto crema y el naranja de las cintas de rally, con logo e icono propios. La pausa muestra el estado de la etapa, las tomas entregadas y los controles principales; Opciones es un hub de tarjetas (Juego y HUD con vista previa del visor, Audio, Controles con calibración y zona muerta); Ajustes del dron tiene rates, expo, modo por defecto, ángulo y campo de visión de la cámara FPV; la Ayuda dibuja los botones de tu mando. Los menús sobre la etapa oscurecen y desenfocan la escena y ocultan el visor.
+
+Con el front-end el juego ya es un juego completo de punta a punta:
+
+- **Título y menú principal.** El juego arranca en la pantalla de título, con el logo sobre una escena 3D. El menú principal lleva a Jugar (la última etapa desbloqueada), Etapas, Opciones, Ayuda y Salir.
+- **Dos etapas.** "Bosque de pinos" y "Lomas del valle", más larga y con horquillas cerradas. La segunda se abre al entregar en la primera una toma B o mejor.
+- **Progreso guardado.** La mejor nota de cada etapa, las tomas entregadas y los desbloqueos quedan guardados entre sesiones.
+- **Carga y transiciones.** Mientras se genera el tramo, una pantalla de carga muestra el mapa de la etapa, la barra de progreso real y un consejo, sin congelar la ventana. Los cambios de pantalla usan un fundido o un obturador de cámara.
+- **Resultados con progreso.** La mejor nota de la pasada, "¡Nuevo récord!" y la etapa desbloqueada, con Siguiente etapa, Repetir etapa y Menú principal. La pausa ofrece "Volver al menú".
 
 ## Cómo se juega
 
-El auto larga a los 45 segundos. Mirá en la tablet dónde pasa cerca tuyo, desplegá el dron, despegá antes de que llegue el auto y grabá su paso con el gimbal. Al terminar cada clip aparece la nota; al llegar el auto a meta, los resultados.
+Desde el menú principal, Jugar te lleva a la última etapa desbloqueada. El auto larga a los 45 segundos. Mirá en la tablet dónde pasa cerca tuyo, desplegá el dron, despegá antes de que llegue el auto y grabá su paso con el gimbal. Al terminar cada clip aparece la nota; al llegar el auto a meta, los resultados.
 
 El mapeo del gamepad es el del simulador. Todo se puede reasignar en Opciones > Controles, y los carteles del juego muestran los nombres de tu mando (Xbox o PlayStation).
 
@@ -58,31 +66,32 @@ Detalles del vuelo:
 - **Soltar el control.** Si soltás el control en pleno vuelo, el dron pasa a Estabilizado y se queda quieto.
 - **Choques y batería.** Un choque fuerte desarma el dron y pierde el clip. Al 0 % de batería el dron cae y hay que guardarlo en la maleta para cambiarla.
 
-La configuración se guarda en `user://config` (Controles, Audio, Juego y HUD, Ajustes del dron).
+La configuración se guarda en `user://config` (Controles, Audio, Juego y HUD, Ajustes del dron) y el progreso en `user://save/progress.tres`.
 
 ## Abrir el proyecto
 
 Requiere **Godot 4.7** con el renderer Forward+. El proyecto está en la carpeta `godot/`: abrí `godot/project.godot` desde el editor.
 
-- **Escena principal:** `res://game/stage.tscn`, la etapa completa.
+- **Escena principal:** `res://game/main.tscn`, el título y el menú principal.
+- **Etapa sola:** `res://game/stage.tscn` se puede abrir y correr directo (F6): juega la etapa 1 sin pasar por el menú.
 - **Campo de pruebas de vuelo:** `res://debug/test_flat_level.tscn`, un piso plano con un auto que da vueltas a un óvalo. Tab alterna entre la cámara del dron y una cámara de persecución.
-- **Tramo:** `res://world/stages/stage_01.tscn`. El nodo `StageBuilder` tiene los puntos del camino, la semilla y el botón **Regenerar**.
+- **Tramos:** `res://world/stages/stage_01.tscn` y `stage_02.tscn`. El nodo `StageBuilder` tiene los puntos del camino, la semilla y el botón **Regenerar**. El catálogo de etapas (nombre, descripción y qué las desbloquea) está en `res://world/stages/stage_catalog.tres`.
 
 ## Estructura
 
 | Carpeta | Contenido |
 | --- | --- |
 | `godot/drone/` | Física, controlador de vuelo, modos, radio, gimbal, batería y sensor de choques |
-| `godot/world/` | Generador del tramo, materiales y escenas de tramos |
+| `godot/world/` | Generador del tramo, materiales, escenas de tramos y catálogo de etapas |
 | `godot/car/` | Auto, perfil de velocidad y sonido de motor |
-| `godot/filming/` | Grabación y puntaje de tomas |
+| `godot/filming/` | Grabación y puntaje de tomas, progreso guardado |
 | `godot/player/` | Jugador en primera persona, maleta e interactuables |
-| `godot/game/` | Etapa y máquina de estados de control |
+| `godot/game/` | Escena principal, etapa y máquina de estados de control |
 | `godot/ui/` | Visor del dron, HUD de la etapa, tablet y mapa, radio, guía, resumen y resultados |
 | `godot/hud/` | Capa de vuelo del visor, derivada del simulador (horizonte, mira, lecturas, chip de modo y estado, sticks) |
-| `godot/gui/` | Menús tomados del simulador: pausa, opciones, controles y calibración, ajustes del dron, ayuda y theme |
+| `godot/gui/` | Título, menú principal, etapas y carga (`gui/front/`), menús (pausa, opciones, controles y calibración, ajustes del dron, ayuda), componentes propios (botones del mando, logo, scrim) y el theme generado por código |
 | `godot/localization/` | Textos de los menús y el HUD en español e inglés |
-| `godot/autoloads/` | `Controls`, `EventBus`, `Audio`, `GameSettings`, `QuadSettings`, `UI` y `StickNavigation` |
+| `godot/autoloads/` | `Controls`, `EventBus`, `Audio`, `GameSettings`, `QuadSettings`, `UI`, `StickNavigation`, `Progress` y `SceneTransition` |
 | `godot/debug/` | Campo de pruebas, cámaras de debug, chequeos automáticos y capturas |
 
 Estos son los valores de diseño que más conviene tocar al probar:
@@ -94,7 +103,7 @@ Estos son los valores de diseño que más conviene tocar al probar:
 
 ## Chequeos automáticos
 
-Hay quince chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
+Hay diecisiete chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
 
 - **Carga:** todos los recursos del juego cargan sin errores.
 - **Dron:** vuelo, respuesta y frenado del Estabilizado, choque, despegue en pendiente, aterrizaje y recuperación.
@@ -110,6 +119,8 @@ Hay quince chequeos que corren sin ventana. Usan su propia carpeta de configurac
 - **Información de la etapa:** mapa, cuenta regresiva, radio, checklist y marcador del dron.
 - **Puntaje en pantalla:** consejos, motivos, guía de pilotaje y resultados.
 - **Menús con mando:** foco al pausar, una sola ✕ alcanza, Confirmar alcanzable en el diálogo, sticks que solo navegan, reanudar sin colgarse, L1/R1 por sección, glifos del mando y calibración que conserva el teclado.
+- **Identidad de los menús:** variaciones y contrastes del theme, `main_theme.tres` regenerado, botones del mando dibujados (✕ ○ □ △ o A B X Y), sonidos de la interfaz, y menús que ocultan el visor y desenfocan la etapa detrás de un solo scrim.
+- **Flujo:** título y menú principal, catálogo de etapas, la carga por pasos genera el mismo tramo que la carga de una vez, progreso guardado y desbloqueos, la etapa 2 se puede recorrer, cargar, reiniciar y volver al menú por transición, y resultados con récord y siguiente etapa.
 - **Visor:** horizonte real en la vista gimbal, altura y velocidad vertical correctas, modos tortuga y lanzamiento, avisos con prioridad (choque y toma perdida en uno solo), sin superposiciones con ningún preset ni resolución, atajos que no se rearman cada frame y vista previa de Opciones igual al visor.
 
 ```sh
@@ -123,6 +134,13 @@ Para ver el juego sin jugarlo, este comando guarda capturas de varias vistas de 
 
 ```sh
 godot --path godot res://debug/tools/screenshot_tour.tscn -- --out=C:/carpeta/de/capturas
+```
+
+El theme de los menús (`gui/theme/main_theme.tres`) y los sonidos de la interfaz (`Assets/Audio/UI/`) se generan por código a partir de `gui/theme/ui_palette.gd` y de las recetas de `debug/tools/build_ui_sounds.gd`. Después de cambiarlos, regeneralos (nunca se editan a mano):
+
+```sh
+godot --headless --path godot -s res://debug/tools/build_theme.gd
+godot --headless --path godot -s res://debug/tools/build_ui_sounds.gd
 ```
 
 ## Publicación en itch.io

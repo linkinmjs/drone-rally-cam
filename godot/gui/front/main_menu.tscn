@@ -1,0 +1,143 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://gui/front/main_menu.gd" id="1_script"]
+[ext_resource type="Script" path="res://gui/components/logo.gd" id="2_logo"]
+[ext_resource type="Script" path="res://gui/front/track_thumbnail.gd" id="3_thumb"]
+
+[node name="MainMenu" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Layout" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 64
+
+[node name="MenuColumn" type="VBoxContainer" parent="Layout"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Logo" type="Control" parent="Layout/MenuColumn"]
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("2_logo")
+logo_height = 120.0
+
+[node name="Spacer" type="Control" parent="Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="ButtonPlay" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MAIN_PLAY"
+alignment = 0
+
+[node name="ButtonStages" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MAIN_STAGES"
+alignment = 0
+
+[node name="ButtonOptions" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_OPTIONS"
+alignment = 0
+
+[node name="ButtonHelp" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_HELP"
+alignment = 0
+
+[node name="ButtonQuit" type="Button" parent="Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MenuItemButton"
+text = "MENU_QUIT"
+alignment = 0
+
+[node name="ContextColumn" type="VBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="ProgressCard" type="PanelContainer" parent="Layout/ContextColumn"]
+custom_minimum_size = Vector2(580, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"Card"
+
+[node name="Content" type="VBoxContainer" parent="Layout/ContextColumn/ProgressCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="Label" parent="Layout/ContextColumn/ProgressCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "MAIN_NEXT"
+uppercase = true
+
+[node name="NextTitle" type="Label" parent="Layout/ContextColumn/ProgressCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+
+[node name="Thumbnail" type="Control" parent="Layout/ContextColumn/ProgressCard/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(500, 230)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_thumb")
+
+[node name="Separator" type="HSeparator" parent="Layout/ContextColumn/ProgressCard/Content"]
+layout_mode = 2
+
+[node name="StatsHeader" type="Label" parent="Layout/ContextColumn/ProgressCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionHeader"
+text = "MAIN_PROGRESS"
+uppercase = true
+
+[node name="Stats" type="GridContainer" parent="Layout/ContextColumn/ProgressCard/Content"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="CompletedLabel" type="Label" parent="Layout/ContextColumn/ProgressCard/Content/Stats"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+text = "MAIN_STAGES_DONE"
+
+[node name="Completed" type="Label" parent="Layout/ContextColumn/ProgressCard/Content/Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+horizontal_alignment = 2
+
+[node name="BestLabel" type="Label" parent="Layout/ContextColumn/ProgressCard/Content/Stats"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+text = "MAIN_BEST_GRADE"
+
+[node name="Best" type="Label" parent="Layout/ContextColumn/ProgressCard/Content/Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"GradeLabel"
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 2

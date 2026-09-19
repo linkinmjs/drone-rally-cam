@@ -5,6 +5,10 @@ extends Control
 ## the back action, keyboard/gamepad/stick focus, the open/close fade, the background
 ## and the footer with control hints.
 ##
+## Background: over a 3D scene (the stage) a dark scrim with the scene blurred behind it
+## (Scrim); otherwise the dark gradient of the palette. Screens opened inside another screen
+## draw nothing: the one below already covers the scene.
+##
 ## Sections: a screen with several columns sets `focus_groups` (or `section_tabs` for a
 ## TabContainer) in its _ready, before super(). ui_focus_next / ui_focus_prev (R1 / L1, Tab /
 ## Shift+Tab) then jump to the next section, since left/right on sliders and lists adjust
@@ -50,6 +54,8 @@ func _ready() -> void:
 		add_child(_hints)
 	UI.register_context(self)
 	var _discard := visibility_changed.connect(_on_visibility_changed)
+	_discard = GameSettings.game_settings_updated.connect(_apply_backdrop)
+	_apply_backdrop()
 	_play_open()
 	grab_initial_focus.call_deferred()
 
@@ -63,15 +69,26 @@ func _draw() -> void:
 		Backdrop.OPAQUE:
 			draw_texture_rect(_get_gradient(), Rect2(Vector2.ZERO, size), false)
 		Backdrop.SCRIM:
+			# With the blur material the shader paints the scene; otherwise the plain color.
 			draw_rect(Rect2(Vector2.ZERO, size), UIPalette.SCRIM)
+
+
+## The scrim's blur is a material of this node: it applies to its own drawing only.
+func _apply_backdrop() -> void:
+	material = Scrim.current_material() if _resolved_backdrop() == Backdrop.SCRIM else null
+	queue_redraw()
 
 
 func _resolved_backdrop() -> Backdrop:
 	if backdrop != Backdrop.AUTO:
 		return backdrop
-	# Over the flying level the menus let the scene show through
-	var scene := get_tree().current_scene
-	if scene is Node3D:
+	var parent := get_parent()
+	while parent:
+		if parent is MenuScreen:
+			return Backdrop.NONE
+		parent = parent.get_parent()
+	# Over a 3D scene the menus let it show through, darkened and blurred.
+	if is_inside_tree() and get_viewport().get_camera_3d() != null:
 		return Backdrop.SCRIM
 	return Backdrop.OPAQUE
 

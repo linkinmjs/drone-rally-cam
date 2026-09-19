@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://gui/front/title_backdrop.tscn" id="2_backdrop"]
+[ext_resource type="PackedScene" path="res://gui/front/title_screen.tscn" id="3_title"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="TitleBackdrop" parent="." instance=ExtResource("2_backdrop")]
+
+[node name="Screens" type="CanvasLayer" parent="."]
+
+[node name="TitleScreen" parent="Screens" instance=ExtResource("3_title")]

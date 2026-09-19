@@ -5,6 +5,8 @@ extends Node
 
 
 const STAGE_SCENE := preload("res://game/stage.tscn")
+const MAIN_SCENE := preload("res://game/main.tscn")
+const LOADING_SCREEN := preload("res://gui/front/loading_screen.tscn")
 ## The tour reads and writes its settings here (menus save when closed), never in the
 ## player's user://config, and always shows the default settings.
 const TOUR_CONFIG_DIR := "user://screenshot_tour"
@@ -18,6 +20,7 @@ func _ready() -> void:
 			_out_dir = arg.trim_prefix("--out=")
 	DirAccess.make_dir_recursive_absolute(_out_dir)
 	_isolate_settings()
+	await _front_end()
 
 	var stage := STAGE_SCENE.instantiate() as Stage
 	add_child(stage)
@@ -84,7 +87,10 @@ func _ready() -> void:
 	await _frames(10)
 	await _capture("04b_pilot_view")
 	stage.open_pause_menu()
-	# Shown as with a gamepad: focus ring and the pad's buttons in the footer.
+	# Shown as with a PlayStation pad (the player's): focus ring and the pad's buttons.
+	Controls.force_playstation = 1
+	Controls.using_gamepad = true
+	Controls.input_device_changed.emit(true)
 	UI.set_input_kind(UI.InputKind.GAMEPAD)
 	await _frames(30)
 	var pause := stage.pause_menu
@@ -105,11 +111,19 @@ func _ready() -> void:
 	pause._on_options_pressed()
 	await _frames(20)
 	var options := _find_screen(pause, "res://gui/options_menu/options_menu.gd")
+	options.grab_initial_focus(true)
+	await _frames(10)
+	await _capture("09c_options_hub")
 	options._on_controls_pressed()
 	await _frames(40)
 	await _capture("09_options_controls")
 	var controls := _find_screen(pause, "res://gui/options_menu/controls_menu/controls_menu.gd")
 	controls.request_back()
+	await _frames(30)
+	options._on_audio_pressed()
+	await _frames(40)
+	await _capture("09b_options_audio")
+	_find_screen(pause, "res://gui/options_menu/audio_menu.gd").request_back()
 	await _frames(30)
 	options._on_game_settings_pressed()
 	await _frames(40)
@@ -131,7 +145,13 @@ func _ready() -> void:
 	pause._on_help_pressed()
 	await _frames(40)
 	await _capture("12_help")
-	_find_screen(pause, "res://gui/help_page.gd").request_back()
+	# The controls reference, drawn with the pad's buttons.
+	var help := _find_screen(pause, "res://gui/help_page.gd")
+	var help_scroll := help.get_node("%HelpScroll") as ScrollContainer
+	help_scroll.scroll_vertical = int((help.get_node("%Sections") as Control).get_child(1).position.y)
+	await _frames(5)
+	await _capture("12b_help_keycaps")
+	help.request_back()
 	await _frames(30)
 	pause.unpause_game()
 	await _frames(5)
@@ -188,8 +208,83 @@ func _ready() -> void:
 	await _frames(30)
 	await _capture("13_results")
 
+	# 14. A better run: new record, stage 2 unlocked, Next stage offered first.
+	var stage_two := StageCatalog.get_default().find(&"stage_02")
+	var good_run: Array[ShotReport] = [_report(0.78), _report(0.6)]
+	stage.results.show_results(world.car.driver_name, good_run,
+			{"new_record": true, "unlocked": stage_two, "next": stage_two})
+	stage.results.grab_initial_focus(true)
+	await _frames(10)
+	await _capture("14_results_next")
+
 	print("Screenshots saved to %s" % ProjectSettings.globalize_path(_out_dir))
 	get_tree().quit(0)
+
+
+## 0. Title over its live backdrop, main menu, stages (one graded, one locked) and the loading
+## screen, as with the player's PlayStation pad.
+func _front_end() -> void:
+	var first_run: Array[ShotReport] = [_report(0.35)]
+	var _run := Progress.record_run(&"stage_01", first_run)
+	var main := MAIN_SCENE.instantiate() as Main
+	add_child(main)
+	await _frames(40)
+	await _capture("00_title")
+	Controls.force_playstation = 1
+	Controls.using_gamepad = true
+	Controls.input_device_changed.emit(true)
+	UI.set_input_kind(UI.InputKind.GAMEPAD)
+	main.show_menu()
+	await _frames(30)
+	main.main_menu.grab_initial_focus(true)
+	await _frames(5)
+	await _capture("00b_main_menu")
+	main.main_menu.button_stages.pressed.emit()
+	await _frames(30)
+	await _capture("00c_stage_select")
+	main.queue_free()
+	await _frames(5)
+
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	var loading := LOADING_SCREEN.instantiate() as LoadingScreen
+	layer.add_child(loading)
+	loading.show_stage(StageCatalog.get_default().find(&"stage_02"))
+	loading.set_progress(0.62, "LOADING_FOREST")
+	await _frames(10)
+	await _capture("00d_loading")
+	layer.queue_free()
+
+	# The real thing: stage 2 built in steps behind the loading screen, then its start.
+	SceneTransition.host = self
+	SceneTransition.start_stage(StageCatalog.get_default().find(&"stage_02"))
+	await get_tree().process_frame
+	while SceneTransition.busy:
+		await get_tree().process_frame
+	await _frames(30)
+	await _capture("00e_stage_two")
+	SceneTransition.current.queue_free()
+	SceneTransition.current = null
+	SceneTransition.host = null
+	await _frames(5)
+
+	# The stage part starts as a keyboard player with no progress, like before.
+	Controls.force_playstation = -1
+	Controls.using_gamepad = false
+	Controls.input_device_changed.emit(false)
+	UI.set_input_kind(UI.InputKind.KEYBOARD)
+	Progress.reset()
+	await _frames(5)
+
+
+## A clip whose samples all score `score`.
+func _report(score: float) -> ShotReport:
+	var report := ShotReport.new()
+	for _i in 80:
+		report.add_sample(score, score, score, 1.0, score)
+	report.duration = 4.0
+	report.finalize()
+	return report
 
 
 func _isolate_settings() -> void:
@@ -200,6 +295,8 @@ func _isolate_settings() -> void:
 	Audio.audio_settings_path = TOUR_CONFIG_DIR.path_join("Audio.cfg")
 	GameSettings.game_settings_path = TOUR_CONFIG_DIR.path_join("GameSettings.cfg")
 	QuadSettings.quad_settings_path = TOUR_CONFIG_DIR.path_join("Quad.cfg")
+	Progress.save_path = TOUR_CONFIG_DIR.path_join("progress.tres")
+	Progress.reset()
 	InputMap.load_from_project_settings()
 	GameSettings.reset_to_defaults()
 	QuadSettings.reset_quad()

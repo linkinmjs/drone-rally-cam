@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[node name="RallySun" type="DirectionalLight3D"]
+transform = Transform3D(1, 0, 0, 0, 0.848048, 0.529919, 0, -0.529919, 0.848048, 0, 60, 0)
+light_color = Color(1, 0.905882, 0.760784, 1)
+light_energy = 1.6
+light_angular_distance = 0.5
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_mode = 2
+directional_shadow_max_distance = 300.0

@@ -8,46 +8,17 @@
 [ext_resource type="Material" path="res://world/materials/trunk.tres" id="6_trunk"]
 [ext_resource type="Material" path="res://world/materials/foliage.tres" id="7_foliage"]
 [ext_resource type="Material" path="res://world/materials/rock.tres" id="8_rock"]
-
-[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_day"]
-sky_top_color = Color(0.25, 0.43, 0.7, 1)
-sky_horizon_color = Color(0.68, 0.72, 0.75, 1)
-ground_bottom_color = Color(0.18, 0.2, 0.16, 1)
-ground_horizon_color = Color(0.68, 0.72, 0.75, 1)
-sun_angle_max = 20.0
-
-[sub_resource type="Sky" id="Sky_day"]
-sky_material = SubResource("SkyMaterial_day")
-
-[sub_resource type="Environment" id="Environment_day"]
-background_mode = 2
-sky = SubResource("Sky_day")
-ambient_light_source = 3
-reflected_light_source = 2
-tonemap_mode = 3
-ssao_enabled = true
-glow_enabled = true
-glow_intensity = 0.4
-fog_enabled = true
-fog_light_color = Color(0.68, 0.73, 0.78, 1)
-fog_density = 0.0005
-fog_sky_affect = 0.2
-volumetric_fog_enabled = true
-volumetric_fog_density = 0.0025
-volumetric_fog_length = 96.0
+[ext_resource type="Environment" path="res://world/environment/rally_env.tres" id="9_env"]
+[ext_resource type="PackedScene" path="res://world/environment/rally_sun.tscn" id="10_sun"]
 
 [node name="Stage01" type="Node3D"]
 script = ExtResource("1_world")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_day")
+environment = ExtResource("9_env")
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(-0.819152, -0.303949, 0.48642, 0, 0.848048, 0.529919, -0.573576, 0.434084, -0.69468, 0, 60, 0)
-light_color = Color(1, 0.95, 0.86, 1)
-light_energy = 1.2
-shadow_enabled = true
-directional_shadow_max_distance = 250.0
+[node name="Sun" parent="." instance=ExtResource("10_sun")]
+rotation = Vector3(-0.558505, -0.785398, 0)
 
 [node name="StageBuilder" type="Node3D" parent="."]
 script = ExtResource("2_builder")

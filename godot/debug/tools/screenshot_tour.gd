@@ -52,6 +52,19 @@ func _ready() -> void:
 	head.rotation.x = deg_to_rad(-25.0)
 	await _frames(5)
 	await _capture("03_drone_deployed")
+	# 3b. The case, open, from up close.
+	var drone_case := stage.control.drone_case
+	if drone_case:
+		var close := Camera3D.new()
+		add_child(close)
+		close.global_position = drone_case.global_transform * Vector3(0.9, 0.75, 1.1)
+		close.look_at(drone_case.global_transform * Vector3(0.3, 0.12, 0.0), Vector3.UP)
+		close.make_current()
+		await _frames(3)
+		await _capture("03b_case_open")
+		stage.player.camera.make_current()
+		close.queue_free()
+		await _frames(2)
 
 	# 4. Drone camera above the road while the car passes, recording.
 	var camera_spot := _find_clear_spot(world, stage.player.global_position)
@@ -174,7 +187,8 @@ func _ready() -> void:
 	GameSettings.reset_to_defaults()
 	await _frames(5)
 
-	# 5. High wide shot of the stage.
+	# 5. High wide shot of the stage (the world alone, without the viewfinder).
+	stage.ui_layer.visible = false
 	var camera := Camera3D.new()
 	camera.far = 4000.0
 	add_child(camera)
@@ -184,6 +198,27 @@ func _ready() -> void:
 	await _frames(20)
 	await _capture("05_stage_overview")
 
+	# 5b. The start: arch, marshal, service van. 5c: spectators. 5d: tape and bales in a corner.
+	var builder := world.builder
+	var props := builder.props
+	var arch := builder.global_transform * (props.transforms["ArchStart"][0] as Transform3D)
+	camera.global_position = arch.origin + arch.basis.z * 18.0 + arch.basis.x * 3.0 + Vector3.UP * 3.0
+	camera.look_at(arch.origin + Vector3.UP * 3.0, Vector3.UP)
+	await _frames(3)
+	await _capture("05b_start_arch")
+	var bodies: Array = props.transforms["Bodies"]
+	if bodies.size() > 3:
+		var person := builder.global_transform * (bodies[3] as Transform3D)
+		camera.global_position = person.origin + person.basis.z.normalized() * 8.0 + Vector3.UP * 2.0
+		camera.look_at(person.origin + Vector3.UP * 1.0, Vector3.UP)
+		await _frames(3)
+		await _capture("05c_spectators")
+	var bale := builder.global_transform * (props.transforms["Bales"][1] as Transform3D)
+	camera.global_position = bale.origin - bale.basis.x.normalized() * 11.0 + Vector3.UP * 4.0
+	camera.look_at(bale.origin + Vector3.UP * 0.6, Vector3.UP)
+	await _frames(3)
+	await _capture("05d_corner")
+
 	# 6. Close to the car in a corner, to see the drift and the road.
 	world.car.distance = 520.0
 	await _frames(3)
@@ -192,6 +227,14 @@ func _ready() -> void:
 	camera.look_at(car_xform.origin + Vector3.UP * 0.8, Vector3.UP)
 	await _frames(2)
 	await _capture("06_car_close")
+	# 6b. From behind, on a straight: the dust of the rear wheels.
+	world.car.distance = 300.0
+	await _frames(70)
+	var chase := world.car.global_transform
+	camera.global_position = chase.origin + chase.basis.z * 9.0 + chase.basis.x * 6.0 + Vector3.UP * 1.2
+	camera.look_at(chase.origin + Vector3.UP * 0.8, Vector3.UP)
+	await _frames(1)
+	await _capture("06b_car_dust")
 
 	# 7. Road edge up close, to check how the road meets the terrain.
 	var edge_point := curve.sample_baked(700.0)
@@ -202,6 +245,26 @@ func _ready() -> void:
 	camera.look_at(edge + (edge_next - edge_point).normalized() * 4.0, Vector3.UP)
 	await _frames(2)
 	await _capture("07_road_edge")
+
+	# 7b. Trees from up close: a leafy tree among pines.
+	var leafy := builder.tree_kinds.find(TreeMesh.Kind.LEAFY)
+	var tree := builder.to_global(builder.tree_positions[maxi(leafy, 0)])
+	camera.global_position = tree + Vector3(7.0, 1.8, 7.0)
+	camera.global_position.y = world.get_ground_height(camera.global_position) + 1.8
+	camera.look_at(tree + Vector3.UP * 3.0, Vector3.UP)
+	await _frames(3)
+	await _capture("07b_trees_close")
+
+	# 15. Low, against the sun: the golden hour over the road.
+	var sun := world.get_node("Sun") as DirectionalLight3D
+	var toward_sun := sun.global_transform.basis.z
+	toward_sun.y = 0.0
+	toward_sun = toward_sun.normalized()
+	var road_spot := builder.to_global(builder.road_samples[260])
+	camera.global_position = road_spot + Vector3.UP * 1.4 - toward_sun * 6.0
+	camera.look_at(road_spot + toward_sun * 40.0 + Vector3.UP * 7.0, Vector3.UP)
+	await _frames(3)
+	await _capture("15_golden_hour")
 
 	# 13. End of the stage.
 	stage.show_results()
@@ -322,31 +385,10 @@ func _find_screen(root: Node, script_path: String) -> MenuScreen:
 	return null
 
 
-## A flat point 12 m from the road, near `near`, with no tree within 7 m.
+## A flat point 12 m from the road, near `near`, with no tree or prop within 7 m.
 func _find_clear_spot(world: StageWorld, near: Vector3) -> Vector3:
-	var curve := world.builder.driving_curve
-	var best := near
-	var best_distance := INF
-	for step in range(0, int(curve.get_baked_length()), 10):
-		var point := curve.sample_baked(step)
-		var side := (curve.sample_baked(step + 5.0) - point).cross(Vector3.UP).normalized()
-		for sign: float in [1.0, -1.0]:
-			var candidate := point + side * 12.0 * sign
-			# Flat ground only, like the case needs.
-			var ground := world.get_ground_height(candidate)
-			var clear := true
-			for offset: Vector3 in [Vector3(2, 0, 0), Vector3(-2, 0, 0), Vector3(0, 0, 2), Vector3(0, 0, -2)]:
-				if absf(world.get_ground_height(candidate + offset) - ground) > 0.3:
-					clear = false
-			for tree in world.builder.tree_positions:
-				if Vector2(tree.x - candidate.x, tree.z - candidate.z).length() < 7.0:
-					clear = false
-					break
-			var distance := candidate.distance_to(near)
-			if clear and distance < best_distance:
-				best = candidate
-				best_distance = distance
-	return best
+	var builder := world.builder
+	return builder.to_global(builder.find_clear_spot(builder.to_local(near)))
 
 
 func _frames(count: int) -> void:
@@ -356,6 +398,10 @@ func _frames(count: int) -> void:
 
 func _capture(file_name: String) -> void:
 	await RenderingServer.frame_post_draw
+	# Budget: what the frame cost to draw.
+	print("%s: %d draw calls, %d k primitives" % [file_name,
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+			Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000])
 	var image := get_viewport().get_texture().get_image()
 	var path := _out_dir.path_join(file_name + ".png")
 	var err := image.save_png(path)

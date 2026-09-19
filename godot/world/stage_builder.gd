@@ -62,6 +62,7 @@ const BOUNDS_LAYER := 32
 @export var trunk_material: Material
 @export var foliage_material: Material
 @export var rock_material: Material
+@export var grass_material: Material = preload("res://world/materials/grass.tres")
 
 ## Curve the cars follow, in this node's space, with the real road heights.
 var driving_curve: Curve3D = null
@@ -69,6 +70,13 @@ var driving_curve: Curve3D = null
 var road_samples: PackedVector3Array = []
 ## Tree positions and canopy radii, for other systems that want to avoid them.
 var tree_positions: PackedVector3Array = []
+## TreeMesh.Kind of each tree in tree_positions.
+var tree_kinds: PackedInt32Array = []
+## Grass tufts placed by the road.
+var grass_count := 0
+## The rally props of the stage (PropCatalog): their transforms by kind, for other systems and
+## the checks.
+var props: PropCatalog = null
 ## Build when entering the tree. The loading screen turns it off and calls build_async().
 var build_on_ready := true
 
@@ -76,10 +84,16 @@ var _cells := 0
 var _heights: PackedFloat32Array = []
 var _road_distance: PackedFloat32Array = []
 var _is_built := false
+## Points taken by props, kept clear by find_clear_spot().
+var _occupied := PackedVector3Array()
 ## Progress of the heightmap and road data on the worker thread, 0 to 1.
 var _data_progress := 0.0
 
 const ROAD_STEP := 2.0
+## The road surface: the crown is this much higher than the edges, and the shoulders slope down
+## to the terrain over this width.
+const ROAD_CROWN := 0.06
+const ROAD_SHOULDER := 1.2
 
 
 func _ready() -> void:
@@ -102,6 +116,8 @@ func build() -> void:
 	_build_road_mesh(generated)
 	_build_bounds(generated)
 	_build_scenery(generated)
+	_build_grass(generated)
+	props = PropCatalog.place(self, generated)
 	_finish(start)
 
 
@@ -128,12 +144,15 @@ func build_async() -> void:
 	build_progress.emit(0.65, "LOADING_FOREST")
 	await get_tree().process_frame
 	await _build_scenery(generated, true)
+	_build_grass(generated)
+	props = PropCatalog.place(self, generated)
 	_finish(start)
 	build_progress.emit(1.0, "LOADING_DONE")
 
 
 func _prepare() -> void:
 	_clear_generated()
+	_occupied.clear()
 	_cells = int(round(size / resolution))
 	_data_progress = 0.0
 
@@ -455,13 +474,19 @@ func _build_terrain(parent: Node3D) -> void:
 	parent.add_child(body)
 
 
+## The road surface over the flattened terrain: five vertices across each sample (outer
+## shoulder, edge, crowned centre, edge, outer shoulder), the shoulders sloping down into the
+## terrain. UV.x is the distance from the centre line in meters, UV.y the distance along / 4.
 func _build_road_mesh(parent: Node3D) -> void:
 	if road_samples.size() < 2:
 		return
-	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var indices := PackedInt32Array()
+	var half := road_width * 0.5
+	# Across the road: lateral offset and height above the road line.
+	var across := [[-half - ROAD_SHOULDER, 0.0], [-half, 0.04], [0.0, 0.04 + ROAD_CROWN],
+			[half, 0.04], [half + ROAD_SHOULDER, 0.0]]
+	var columns := across.size()
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var travelled := 0.0
 	var count := road_samples.size()
 	for i in count:
@@ -472,28 +497,32 @@ func _build_road_mesh(parent: Node3D) -> void:
 		var side := Vector3(-forward.z, 0.0, forward.x)
 		if i > 0:
 			travelled += point.distance_to(previous)
-		var centre := point + Vector3.UP * 0.04
-		vertices.append(centre - side * road_width * 0.5)
-		vertices.append(centre + side * road_width * 0.5)
-		normals.append(Vector3.UP)
-		normals.append(Vector3.UP)
-		uvs.append(Vector2(0.0, travelled / 4.0))
-		uvs.append(Vector2(1.0, travelled / 4.0))
+		for column: Array in across:
+			var offset: float = column[0]
+			var vertex := point + side * offset
+			if absf(offset) > half:
+				# The shoulder ends on the terrain itself.
+				vertex.y = get_height(vertex.x, vertex.z) + 0.02
+			else:
+				vertex.y = point.y + column[1]
+			surface.set_uv(Vector2(offset, travelled / 4.0))
+			surface.add_vertex(vertex)
 		if i > 0:
-			var a := (i - 1) * 2
-			# Clockwise seen from above.
-			indices.append_array([a, a + 2, a + 1, a + 1, a + 2, a + 3])
-
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			var row := (i - 1) * columns
+			for c in columns - 1:
+				var a := row + c
+				var b := a + columns
+				# Clockwise seen from above.
+				surface.add_index(a)
+				surface.add_index(b)
+				surface.add_index(a + 1)
+				surface.add_index(a + 1)
+				surface.add_index(b)
+				surface.add_index(b + 1)
+	surface.generate_normals()
 	if road_material:
-		mesh.surface_set_material(0, road_material)
+		surface.set_material(road_material)
+	var mesh := surface.commit()
 	var road := MeshInstance3D.new()
 	road.name = "RoadMesh"
 	road.mesh = mesh
@@ -597,24 +626,24 @@ func _build_scenery(parent: Node3D, in_steps := false) -> void:
 		tree_positions.append(position)
 		tree_colors.append(Color.from_hsv(rng.randf_range(0.26, 0.36), rng.randf_range(0.45, 0.7), rng.randf_range(0.28, 0.45)))
 
-	var trunk_mesh := CylinderMesh.new()
-	trunk_mesh.top_radius = 0.14
-	trunk_mesh.bottom_radius = 0.24
-	trunk_mesh.height = 3.0
-	trunk_mesh.radial_segments = 6
-	trunk_mesh.rings = 1
-	var canopy_mesh := CylinderMesh.new()
-	canopy_mesh.top_radius = 0.0
-	canopy_mesh.bottom_radius = 1.9
-	canopy_mesh.height = 6.5
-	canopy_mesh.radial_segments = 8
-	canopy_mesh.rings = 2
-	var trunk_offset := Transform3D(Basis.IDENTITY, Vector3(0.0, 1.5, 0.0))
-	var canopy_offset := Transform3D(Basis.IDENTITY, Vector3(0.0, 5.0, 0.0))
-	parent.add_child(_multimesh("Trunks", trunk_mesh, trunk_material, tree_transforms, trunk_offset, PackedColorArray()))
-	parent.add_child(_multimesh("Canopies", canopy_mesh, foliage_material, tree_transforms, canopy_offset, tree_colors))
+	# The kind of each tree (pine, leafy, bush) comes from its own generator, so the positions
+	# and the rocks after them stay the same whatever the kinds.
+	tree_kinds = _tree_kinds(tree_transforms.size())
+	var names := {TreeMesh.Kind.PINE: "Pine", TreeMesh.Kind.LEAFY: "Leafy", TreeMesh.Kind.BUSH: "Bush"}
+	for kind: int in TreeMesh.Kind.values():
+		var transforms: Array[Transform3D] = []
+		var colors := PackedColorArray()
+		for i in tree_transforms.size():
+			if tree_kinds[i] == kind:
+				transforms.append(tree_transforms[i])
+				colors.append(_tree_color(tree_colors[i], kind))
+		if TreeMesh.TRUNK_HEIGHT.has(kind):
+			parent.add_child(_multimesh("%sTrunks" % names[kind], TreeMesh.trunk(kind), trunk_material,
+					transforms, Transform3D.IDENTITY, PackedColorArray()))
+		parent.add_child(_multimesh("%sCanopies" % names[kind], TreeMesh.canopy(kind), foliage_material,
+				transforms, Transform3D.IDENTITY, colors))
 
-	# Collision follows each tree's visible trunk and cone, with its own scale.
+	# Collision follows each tree's visible trunk and canopy, with its own scale.
 	var tree_body := StaticBody3D.new()
 	tree_body.name = "TreeColliders"
 	tree_body.collision_layer = TERRAIN_LAYER
@@ -625,16 +654,25 @@ func _build_scenery(parent: Node3D, in_steps := false) -> void:
 			await get_tree().process_frame
 		var xform := tree_transforms[i]
 		var scale := xform.basis.get_scale()
-		var trunk := CollisionShape3D.new()
-		var trunk_shape := CylinderShape3D.new()
-		trunk_shape.radius = trunk_mesh.bottom_radius * scale.x
-		trunk_shape.height = trunk_mesh.height * scale.y
-		trunk.shape = trunk_shape
-		trunk.position = xform * trunk_offset.origin
-		tree_body.add_child(trunk)
+		var kind := tree_kinds[i]
+		if TreeMesh.TRUNK_HEIGHT.has(kind):
+			var trunk_height: float = TreeMesh.TRUNK_HEIGHT[kind]
+			var trunk := CollisionShape3D.new()
+			var trunk_shape := CylinderShape3D.new()
+			trunk_shape.radius = (0.24 if kind == TreeMesh.Kind.PINE else 0.3) * scale.x
+			trunk_shape.height = trunk_height * scale.y
+			trunk.shape = trunk_shape
+			trunk.position = xform * Vector3(0.0, trunk_height * 0.5, 0.0)
+			tree_body.add_child(trunk)
+		var canopy_data: Array = TreeMesh.CANOPY_SHAPE[kind]
 		var canopy := CollisionShape3D.new()
-		canopy.shape = _cone_shape(canopy_mesh.bottom_radius * scale.x, canopy_mesh.height * scale.y)
-		canopy.position = xform * canopy_offset.origin
+		if canopy_data[0] == "cone":
+			canopy.shape = _cone_shape(canopy_data[1] * scale.x, canopy_data[2] * scale.y)
+		else:
+			var sphere := SphereShape3D.new()
+			sphere.radius = canopy_data[1] * scale.x
+			canopy.shape = sphere
+		canopy.position = xform * Vector3(0.0, canopy_data[3], 0.0)
 		tree_body.add_child(canopy)
 	parent.add_child(tree_body)
 
@@ -671,6 +709,109 @@ func _build_scenery(parent: Node3D, in_steps := false) -> void:
 		shape.position = xform.origin
 		rock_body.add_child(shape)
 	parent.add_child(rock_body)
+
+
+## Kind of each tree (TreeMesh.Kind), from a generator of its own: mostly pines, some leafy
+## trees and bushes.
+func _tree_kinds(count: int) -> PackedInt32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = scenery_seed + 1
+	var kinds := PackedInt32Array()
+	for i in count:
+		var roll := rng.randf()
+		if roll < 0.62:
+			kinds.append(TreeMesh.Kind.PINE)
+		elif roll < 0.86:
+			kinds.append(TreeMesh.Kind.LEAFY)
+		else:
+			kinds.append(TreeMesh.Kind.BUSH)
+	return kinds
+
+
+## Canopy tint by kind, derived from the tree's color: leafy trees lighter and warmer, bushes
+## a touch darker.
+static func _tree_color(base: Color, kind: int) -> Color:
+	match kind:
+		TreeMesh.Kind.LEAFY:
+			return Color.from_hsv(base.h - 0.035, base.s * 0.92, minf(base.v * 1.22, 1.0))
+		TreeMesh.Kind.BUSH:
+			return Color.from_hsv(base.h - 0.015, base.s, base.v * 0.95)
+	return base
+
+
+## Tufts of grass on both sides of the road, 3 to 15 m from its edge, from their own generator.
+func _build_grass(parent: Node3D) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = scenery_seed + 3
+	var transforms: Array[Transform3D] = []
+	var colors := PackedColorArray()
+	var half := size * 0.5 - edge_falloff * 0.5
+	for i in range(0, road_samples.size(), 3):
+		var point := road_samples[i]
+		var next := road_samples[mini(i + 1, road_samples.size() - 1)]
+		var forward := Vector3(next.x - point.x, 0.0, next.z - point.z).normalized()
+		var side := Vector3(-forward.z, 0.0, forward.x)
+		for sign: float in [-1.0, 1.0]:
+			for _j in 3:
+				var offset := road_width * 0.5 + rng.randf_range(3.0, 15.0)
+				var along := rng.randf_range(-3.0, 3.0)
+				var spot := point + side * offset * sign + forward * along
+				var scale := rng.randf_range(0.7, 1.5)
+				var turn := rng.randf() * TAU
+				var tint := Color.from_hsv(rng.randf_range(0.2, 0.28), rng.randf_range(0.45, 0.65),
+						rng.randf_range(0.42, 0.62))
+				if absf(spot.x) > half or absf(spot.z) > half or _slope_at(spot.x, spot.z) > 0.45:
+					continue
+				spot.y = get_height(spot.x, spot.z) - 0.02
+				transforms.append(Transform3D(Basis(Vector3.UP, turn).scaled(Vector3.ONE * scale), spot))
+				colors.append(tint)
+	grass_count = transforms.size()
+	var grass := _multimesh("Grass", TreeMesh.grass_tuft(), grass_material, transforms, Transform3D.IDENTITY, colors)
+	grass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	grass.visibility_range_end = 160.0
+	parent.add_child(grass)
+
+
+## A flat spot `distance_from_road` meters from the road, the closest to `near` (this node's
+## space), with no tree or prop within `clearance` meters and no other stretch of road closer.
+## Spectators stand on these spots; the screenshot tour flies from one.
+func find_clear_spot(near: Vector3, distance_from_road := 12.0, clearance := 7.0) -> Vector3:
+	var best := near
+	var best_distance := INF
+	if driving_curve == null:
+		return best
+	var length := driving_curve.get_baked_length()
+	for step in range(0, int(length), 10):
+		var point := driving_curve.sample_baked(step)
+		var side := (driving_curve.sample_baked(minf(step + 5.0, length)) - point).cross(Vector3.UP).normalized()
+		for sign: float in [1.0, -1.0]:
+			var candidate := point + side * distance_from_road * sign
+			var ground := get_height(candidate.x, candidate.z)
+			var clear := get_road_distance(candidate.x, candidate.z) > distance_from_road - 1.5
+			# Flat ground only, like the drone case needs.
+			for offset: Vector2 in [Vector2(2, 0), Vector2(-2, 0), Vector2(0, 2), Vector2(0, -2)]:
+				if absf(get_height(candidate.x + offset.x, candidate.z + offset.y) - ground) > 0.3:
+					clear = false
+			if clear:
+				for tree in tree_positions:
+					if Vector2(tree.x - candidate.x, tree.z - candidate.z).length() < clearance:
+						clear = false
+						break
+			if clear:
+				for taken in _occupied:
+					if Vector2(taken.x - candidate.x, taken.z - candidate.z).length() < clearance:
+						clear = false
+						break
+			var distance := candidate.distance_to(near)
+			if clear and distance < best_distance:
+				best = Vector3(candidate.x, ground, candidate.z)
+				best_distance = distance
+	return best
+
+
+## Marks a point as taken by a prop (find_clear_spot keeps away from it).
+func occupy(point: Vector3) -> void:
+	_occupied.append(point)
 
 
 ## Convex cone standing on its base, centred on its middle height.

@@ -120,7 +120,11 @@ func recover() -> bool:
 	drone.stow()
 	(drone.get_node("Battery") as Battery).recharge()
 	if drone_case:
-		drone_case.queue_free()
+		# The lid closes before the case disappears.
+		if drone_case.has_method(&"close_and_free"):
+			drone_case.call(&"close_and_free")
+		else:
+			drone_case.queue_free()
 		drone_case = null
 	player.has_kit = true
 	_set_state(State.WALKING_NO_DRONE)

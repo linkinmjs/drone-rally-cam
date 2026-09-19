@@ -4,7 +4,7 @@ Sos un operador de cámara aérea solitario en un rally. Llegás a pie al tramo,
 
 El diseño completo está en [docs/Drone Rally Cam — Documento de diseño.pdf](docs/). No es la palabra final: el juego va a cambiar a medida que lo probemos.
 
-## Estado: Fase 1, iteración de legibilidad y controles, y front-end (v0.3.0)
+## Estado: Fase 1, iteración de legibilidad y controles, front-end y mundo estilizado (v0.3.0)
 
 La Fase 1 responde una sola pregunta: **¿es divertido esperar y filmar un solo paso de un auto?**
 
@@ -31,6 +31,15 @@ Con el front-end el juego ya es un juego completo de punta a punta:
 - **Progreso guardado.** La mejor nota de cada etapa, las tomas entregadas y los desbloqueos quedan guardados entre sesiones.
 - **Carga y transiciones.** Mientras se genera el tramo, una pantalla de carga muestra el mapa de la etapa, la barra de progreso real y un consejo, sin congelar la ventana. Los cambios de pantalla usan un fundido o un obturador de cámara.
 - **Resultados con progreso.** La mejor nota de la pasada, "¡Nuevo récord!" y la etapa desbloqueada, con Siguiente etapa, Repetir etapa y Menú principal. La pausa ofrece "Volver al menú".
+
+El mundo tiene un estilo low-poly propio, sin assets externos:
+
+- **Luz de atardecer.** Un sol bajo y cálido con sombras largas y un cielo y una lejanía cálidos, compartidos por las dos etapas y el título.
+- **Terreno, camino y bosque.** El terreno cambia de tono con la altura y oscurece los pliegues. El camino tiene corona, banquinas y huellas. Hay pinos, árboles frondosos y arbustos que se mecen con el viento, y matas de pasto cerca del camino.
+- **Ambiente de rally.** Arco de largada y pancarta de meta, carteles de kilómetro, cinta y estacas en las curvas cerradas, fardos en las tres más cerradas, público, comisarios con bandera, la camioneta de asistencia y un alambrado.
+- **Un auto vivo.** Las ruedas giran y las delanteras doblan, la carrocería se inclina en las curvas y al frenar, lleva su número y levanta polvo al correr.
+- **Dron, maleta y jugador.** El gimbal tiene su cámara a la vista, la maleta se abre al desplegar y se cierra al guardar, la cámara se balancea al caminar y la maleta se ve en tu mano mientras la llevás.
+- **Efectos.** Chispas y polvo al chocar, con una sacudida en la vista de piloto; polvo al desplegar y al guardar; un anillo de polvo al aterrizar; y una viñeta y un grano suaves en las cámaras del dron. Cada evento ya llama a `Audio.play_event`, que todavía no suena.
 
 ## Cómo se juega
 
@@ -82,14 +91,15 @@ Requiere **Godot 4.7** con el renderer Forward+. El proyecto está en la carpeta
 | Carpeta | Contenido |
 | --- | --- |
 | `godot/drone/` | Física, controlador de vuelo, modos, radio, gimbal, batería y sensor de choques |
-| `godot/world/` | Generador del tramo, materiales, escenas de tramos y catálogo de etapas |
+| `godot/world/` | Generador del tramo, luz y cielo compartidos (`world/environment/`), árboles y props de rally (`world/props/`), materiales, escenas de tramos y catálogo de etapas |
 | `godot/car/` | Auto, perfil de velocidad y sonido de motor |
 | `godot/filming/` | Grabación y puntaje de tomas, progreso guardado |
 | `godot/player/` | Jugador en primera persona, maleta e interactuables |
-| `godot/game/` | Escena principal, etapa y máquina de estados de control |
-| `godot/ui/` | Visor del dron, HUD de la etapa, tablet y mapa, radio, guía, resumen y resultados |
+| `godot/game/` | Escena principal, etapa, máquina de estados de control y respuesta a los eventos (efectos y ganchos de sonido) |
+| `godot/ui/` | Visor del dron y su look de cámara, HUD de la etapa, tablet y mapa, radio, guía, resumen y resultados |
 | `godot/hud/` | Capa de vuelo del visor, derivada del simulador (horizonte, mira, lecturas, chip de modo y estado, sticks) |
 | `godot/gui/` | Título, menú principal, etapas y carga (`gui/front/`), menús (pausa, opciones, controles y calibración, ajustes del dron, ayuda), componentes propios (botones del mando, logo, scrim) y el theme generado por código |
+| `godot/vfx/` | Partículas: polvo del auto, polvo, chispas y anillo de aterrizaje |
 | `godot/localization/` | Textos de los menús y el HUD en español e inglés |
 | `godot/autoloads/` | `Controls`, `EventBus`, `Audio`, `GameSettings`, `QuadSettings`, `UI`, `StickNavigation`, `Progress` y `SceneTransition` |
 | `godot/debug/` | Campo de pruebas, cámaras de debug, chequeos automáticos y capturas |
@@ -100,10 +110,11 @@ Estos son los valores de diseño que más conviene tocar al probar:
 - **Autonomía:** `capacity_mah` en el nodo `Battery` del dron. Hoy da unos 3 minutos de vuelo estacionario.
 - **Auto:** `skill`, `grip` y `top_speed` en `car/rally_car.tscn`.
 - **Puntaje:** pesos y umbrales en `filming/shot_scorer.gd` y `filming/shot_report.gd`.
+- **Luz y cielo:** `world/environment/rally_env.tres` y `world/environment/rally_sun.tscn`, compartidos por todas las etapas.
 
 ## Chequeos automáticos
 
-Hay diecisiete chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
+Hay dieciocho chequeos que corren sin ventana. Usan su propia carpeta de configuración, así que tus ajustes no cambian los resultados:
 
 - **Carga:** todos los recursos del juego cargan sin errores.
 - **Dron:** vuelo, respuesta y frenado del Estabilizado, choque, despegue en pendiente, aterrizaje y recuperación.
@@ -122,6 +133,7 @@ Hay diecisiete chequeos que corren sin ventana. Usan su propia carpeta de config
 - **Identidad de los menús:** variaciones y contrastes del theme, `main_theme.tres` regenerado, botones del mando dibujados (✕ ○ □ △ o A B X Y), sonidos de la interfaz, y menús que ocultan el visor y desenfocan la etapa detrás de un solo scrim.
 - **Flujo:** título y menú principal, catálogo de etapas, la carga por pasos genera el mismo tramo que la carga de una vez, progreso guardado y desbloqueos, la etapa 2 se puede recorrer, cargar, reiniciar y volver al menú por transición, y resultados con récord y siguiente etapa.
 - **Visor:** horizonte real en la vista gimbal, altura y velocidad vertical correctas, modos tortuga y lanzamiento, avisos con prioridad (choque y toma perdida en uno solo), sin superposiciones con ningún preset ni resolución, atajos que no se rearman cada frame y vista previa de Opciones igual al visor.
+- **Mundo:** la misma semilla da los mismos árboles (en el lugar de siempre) y los mismos props, nada sólido sobre el camino, arcos en la largada y la meta, sol bajo sin niebla que blanquee la lejanía, efectos conectados a todos los eventos, polvo y ruedas del auto, tapa de la maleta, choque con chispas y polvo, y pisadas en ripio o pasto.
 
 ```sh
 godot --headless --path godot --import
@@ -130,7 +142,7 @@ godot --headless --path godot --fixed-fps 100 res://debug/headless_checks/check_
 
 Para correr solo algunos, agregá `-- --only=drone`. El nombre se compara por coincidencia parcial. Después de agregar un `class_name` nuevo, repetí `--import` para que Godot actualice la caché de clases.
 
-Para ver el juego sin jugarlo, este comando guarda capturas de varias vistas de la etapa. Necesita GPU:
+Para ver el juego sin jugarlo, este comando guarda capturas de varias vistas de la etapa e imprime cuántas llamadas de dibujo y primitivas costó cada una. Necesita GPU:
 
 ```sh
 godot --path godot res://debug/tools/screenshot_tour.tscn -- --out=C:/carpeta/de/capturas

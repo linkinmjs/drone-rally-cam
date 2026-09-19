@@ -71,6 +71,7 @@ var _pending_abort := ""
 @onready var tablet := $UI/Tablet as Tablet
 ## Viewfinder, on-foot overlay, tablet and clip summary: hidden behind the menus.
 @onready var ui_layer := $UI as CanvasLayer
+@onready var feedback := $StageFeedback as StageFeedback
 
 
 ## Sets the stage up before it enters the tree: the world of `info` in place of the saved one
@@ -110,6 +111,7 @@ func _ready() -> void:
 		await world.build_ready()
 
 	player.global_transform = world.get_player_spawn_transform()
+	player.ground_surface = _surface_at
 	drone.stow()
 	recorder.setup(drone, world.car)
 	visor.setup(drone, recorder, player, control)
@@ -413,6 +415,13 @@ func _set_status(text: String) -> void:
 	status_text = text
 	hud.set_status(text)
 	visor.set_status(text)
+
+
+## The ground under a world position, for the footsteps: the road's gravel or grass.
+func _surface_at(at: Vector3) -> StringName:
+	var builder := world.builder
+	var local := builder.to_local(at)
+	return &"gravel" if builder.get_road_distance(local.x, local.z) < builder.road_width * 0.5 + 0.8 else &"grass"
 
 
 ## What the pause menu tells about the stage: its name and where the race is.

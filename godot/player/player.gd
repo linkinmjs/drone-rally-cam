@@ -8,6 +8,9 @@ extends CharacterBody3D
 signal deploy_requested(ground: Transform3D)
 signal deploy_refused(reason: String)
 
+## Render layer of what only the player's own camera sees (the case in their hand).
+const VIEW_MODEL_LAYER := 512
+
 @export var walk_speed := 2.2
 @export var sprint_speed := 4.5
 @export var crouch_speed := 1.2
@@ -22,6 +25,9 @@ signal deploy_refused(reason: String)
 @export var crouch_eye_height := 1.0
 ## Steepest ground, in degrees, where the drone case can be opened.
 @export var max_deploy_slope_deg := 15.0
+## Head bob at walking speed (m) and steps per meter.
+@export var bob_amount := 0.035
+@export var steps_per_meter := 0.75
 ## How far in front of the feet the drone is set down.
 @export var deploy_distance := 1.4
 
@@ -30,10 +36,15 @@ var active := true
 ## True while the player carries the drone in its case.
 var has_kit := true
 var is_crouching := false
+## The ground under a position: &"gravel" or &"grass" (set by the stage, for the footsteps).
+var ground_surface := func(_at: Vector3) -> StringName: return &"grass"
+
+var _step_phase := 0.0
 
 @onready var head := $Head as Node3D
 @onready var camera := $Head/Camera3D as Camera3D
 @onready var interact_ray := $Head/InteractRay as RayCast3D
+@onready var held_case := $Head/HeldCase as Node3D
 
 
 func _ready() -> void:
@@ -86,6 +97,22 @@ func _physics_process(delta: float) -> void:
 	velocity.x = lerpf(velocity.x, target.x, weight)
 	velocity.z = lerpf(velocity.z, target.z, weight)
 	move_and_slide()
+	_bob(delta)
+	held_case.visible = has_kit
+
+
+## The camera bobs with the steps, less when crouching, and every step is announced.
+func _bob(delta: float) -> void:
+	var ground_speed := Vector2(velocity.x, velocity.z).length()
+	if not is_on_floor() or ground_speed < 0.3:
+		camera.position = camera.position.lerp(Vector3.ZERO, 1.0 - exp(-8.0 * delta))
+		return
+	var previous := _step_phase
+	_step_phase += ground_speed * steps_per_meter * delta * PI
+	if floori(_step_phase / PI) != floori(previous / PI):
+		EventBus.player_step.emit(ground_surface.call(global_position))
+	var amount := bob_amount * clampf(ground_speed / walk_speed, 0.0, 1.6) * (0.5 if is_crouching else 1.0)
+	camera.position = Vector3(sin(_step_phase) * amount * 0.5, -absf(cos(_step_phase)) * amount, 0.0)
 
 
 ## The interactable the player is looking at, if any.

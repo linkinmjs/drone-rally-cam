@@ -1,6 +1,6 @@
-## Live 3D behind the title and the main menu: a drone hovering over 40 m of gravel road
-## among pines, seen by a camera in a slow orbit, with the materials and sky of the stages.
-## Built in code; nothing here simulates (the drone is only a model).
+## Live 3D behind the title and the main menu: a drone hovering over a stretch of gravel road
+## among the trees of the stages, seen by a camera in a slow orbit, with the environment, sun
+## and materials of the stages. Built in code; nothing here simulates (the drone is a model).
 class_name TitleBackdrop
 extends Node3D
 
@@ -10,6 +10,9 @@ const TERRAIN := preload("res://world/materials/terrain.tres")
 const ROAD := preload("res://world/materials/road.tres")
 const TRUNK := preload("res://world/materials/trunk.tres")
 const FOLIAGE := preload("res://world/materials/foliage.tres")
+const ENVIRONMENT := preload("res://world/environment/rally_env.tres")
+const SUN := preload("res://world/environment/rally_sun.tscn")
+const ROAD_WIDTH := 7.0
 const ORBIT_RADIUS := 1.35
 const ORBIT_HEIGHT := 0.4
 const ORBIT_SPEED := 0.08
@@ -64,33 +67,12 @@ func _place(time: float) -> void:
 
 
 func _build_environment() -> void:
-	var sky_material := ProceduralSkyMaterial.new()
-	sky_material.sky_top_color = Color(0.25, 0.43, 0.7)
-	sky_material.sky_horizon_color = Color(0.72, 0.7, 0.66)
-	sky_material.ground_bottom_color = Color(0.18, 0.2, 0.16)
-	sky_material.ground_horizon_color = Color(0.72, 0.7, 0.66)
-	var sky := Sky.new()
-	sky.sky_material = sky_material
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_SKY
-	environment.sky = sky
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	environment.tonemap_mode = Environment.TONE_MAPPER_ACES
-	environment.glow_enabled = true
-	environment.glow_intensity = 0.4
-	environment.fog_enabled = true
-	environment.fog_light_color = Color(0.72, 0.72, 0.72)
-	environment.fog_density = 0.004
-	environment.fog_sky_affect = 0.3
 	var world_environment := WorldEnvironment.new()
-	world_environment.environment = environment
+	world_environment.environment = ENVIRONMENT
 	add_child(world_environment)
-	# A low, warm sun.
-	var sun := DirectionalLight3D.new()
-	sun.light_color = Color(1.0, 0.88, 0.72)
-	sun.light_energy = 1.3
-	sun.shadow_enabled = true
-	sun.rotation = Vector3(deg_to_rad(-24.0), deg_to_rad(-140.0), 0.0)
+	# The sun of the stages, a little lower: long shadows across the road.
+	var sun := SUN.instantiate() as DirectionalLight3D
+	sun.rotation = Vector3(deg_to_rad(-22.0), deg_to_rad(-140.0), 0.0)
 	add_child(sun)
 
 
@@ -101,12 +83,27 @@ func _build_ground() -> void:
 	ground.mesh = plane
 	ground.material_override = TERRAIN
 	add_child(ground)
+	# A straight stretch of the stages' road: same cross-section and UVs (meters across).
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var across := [[-ROAD_WIDTH * 0.5 - 1.2, 0.0], [-ROAD_WIDTH * 0.5, 0.04], [0.0, 0.1],
+			[ROAD_WIDTH * 0.5, 0.04], [ROAD_WIDTH * 0.5 + 1.2, 0.0]]
+	for row in 31:
+		var z := 30.0 - row * 2.0
+		for column: Array in across:
+			surface.set_uv(Vector2(column[0], row * 0.5))
+			surface.add_vertex(Vector3(column[0], column[1] + 0.02, z))
+	for row in 30:
+		for c in across.size() - 1:
+			var a := row * across.size() + c
+			var b := a + across.size()
+			for index in [a, b, a + 1, a + 1, b, b + 1]:
+				surface.add_index(index)
+	surface.generate_normals()
 	var road := MeshInstance3D.new()
-	var strip := PlaneMesh.new()
-	strip.size = Vector2(7.0, 60.0)
-	road.mesh = strip
+	road.mesh = surface.commit()
 	road.material_override = ROAD
-	road.position = Vector3(0.0, 0.03, -12.0)
+	road.position = Vector3(0.0, 0.0, -12.0)
 	road.rotation.y = deg_to_rad(18.0)
 	road.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(road)
@@ -115,29 +112,34 @@ func _build_ground() -> void:
 func _build_trees() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
+	var kinds: Array[int] = []
 	var transforms: Array[Transform3D] = []
 	var colors := PackedColorArray()
-	while transforms.size() < 90:
+	var placed := 0
+	while placed < 110:
 		var spot := Vector3(rng.randf_range(-70.0, 70.0), 0.0, rng.randf_range(-90.0, 30.0))
 		# Keep the road and the drone clear.
 		var along_road := Vector2(spot.x, spot.z + 12.0).rotated(deg_to_rad(18.0))
 		if absf(along_road.x) < 8.0 or spot.length() < 12.0:
 			continue
 		var scale := rng.randf_range(0.8, 1.4)
+		var roll := rng.randf()
+		var kind := TreeMesh.Kind.PINE if roll < 0.6 else (TreeMesh.Kind.LEAFY if roll < 0.85 else TreeMesh.Kind.BUSH)
+		kinds.append(kind)
 		transforms.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * scale), spot))
-		colors.append(Color.from_hsv(rng.randf_range(0.26, 0.36), rng.randf_range(0.45, 0.7), rng.randf_range(0.28, 0.45)))
-	var trunk := CylinderMesh.new()
-	trunk.top_radius = 0.14
-	trunk.bottom_radius = 0.24
-	trunk.height = 3.0
-	trunk.radial_segments = 6
-	var canopy := CylinderMesh.new()
-	canopy.top_radius = 0.0
-	canopy.bottom_radius = 1.9
-	canopy.height = 6.5
-	canopy.radial_segments = 8
-	add_child(_multimesh(trunk, TRUNK, transforms, Vector3(0.0, 1.5, 0.0), PackedColorArray()))
-	add_child(_multimesh(canopy, FOLIAGE, transforms, Vector3(0.0, 5.0, 0.0), colors))
+		colors.append(Color.from_hsv(rng.randf_range(0.24, 0.34), rng.randf_range(0.45, 0.7),
+				rng.randf_range(0.3, 0.48)))
+		placed += 1
+	for kind: int in TreeMesh.Kind.values():
+		var of_kind: Array[Transform3D] = []
+		var tints := PackedColorArray()
+		for i in kinds.size():
+			if kinds[i] == kind:
+				of_kind.append(transforms[i])
+				tints.append(colors[i])
+		if TreeMesh.TRUNK_HEIGHT.has(kind):
+			add_child(_multimesh(TreeMesh.trunk(kind), TRUNK, of_kind, Vector3.ZERO, PackedColorArray()))
+		add_child(_multimesh(TreeMesh.canopy(kind), FOLIAGE, of_kind, Vector3.ZERO, tints))
 
 
 func _multimesh(mesh: Mesh, material: Material, transforms: Array[Transform3D], offset: Vector3,

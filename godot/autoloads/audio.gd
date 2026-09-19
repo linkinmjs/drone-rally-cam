@@ -8,6 +8,10 @@ const BUS_MOTORS := &"Motors"
 const BUS_UI := &"UI"
 const BUS_CAR := &"Car"
 
+## Sounds of the game events (StageFeedback): id → {path, bus, volume_db, pitch_jitter}.
+## Empty until plan 06 adds the sounds.
+const EVENTS := {}
+
 var audio_settings_path := "%s/Audio.cfg" % [Controls.CONFIG_DIR]
 
 var audio_settings := {
@@ -17,6 +21,13 @@ var audio_settings := {
 	"ui_volume": 0.8,
 	"muted": false,
 }
+
+
+## Plays the sound of a game event, at `_position` in the world (INF: not positioned). Ids
+## without a sound in EVENTS are ignored.
+func play_event(id: StringName, _position := Vector3.INF) -> void:
+	if not EVENTS.has(id):
+		return
 
 
 func _ready() -> void:

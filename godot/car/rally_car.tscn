@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" path="res://car/rally_car.gd" id="1_car"]
 [ext_resource type="Script" path="res://car/engine_audio.gd" id="2_engine"]
+[ext_resource type="PackedScene" path="res://vfx/car_dust.tscn" id="3_dust"]
+[ext_resource type="FontFile" path="res://gui/RecursiveSansLnrSt-Bold.otf" id="4_font"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.8, 1.35, 4.2)
@@ -63,6 +65,36 @@ rings = 1
 material = SubResource("Material_lights")
 size = Vector3(0.32, 0.12, 0.04)
 
+[sub_resource type="StandardMaterial3D" id="Material_rim"]
+albedo_color = Color(0.72, 0.73, 0.75, 1)
+metallic = 0.6
+roughness = 0.35
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rim"]
+material = SubResource("Material_rim")
+top_radius = 0.2
+bottom_radius = 0.2
+height = 0.272
+radial_segments = 10
+rings = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_spoke"]
+material = SubResource("Material_rim")
+size = Vector3(0.52, 0.274, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_antenna"]
+material = SubResource("Material_rubber")
+size = Vector3(0.02, 0.7, 0.02)
+
+[sub_resource type="BoxMesh" id="BoxMesh_flap"]
+material = SubResource("Material_rubber")
+size = Vector3(0.36, 0.26, 0.02)
+
+[sub_resource type="BoxMesh" id="BoxMesh_roundel"]
+material = SubResource("Material_livery")
+size = Vector3(0.02, 0.44, 0.52)
+
+
 [node name="RallyCar" type="AnimatableBody3D"]
 collision_layer = 4
 collision_mask = 0
@@ -72,49 +104,128 @@ script = ExtResource("1_car")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
 shape = SubResource("BoxShape3D_body")
 
-[node name="Body" type="MeshInstance3D" parent="."]
+[node name="Chassis" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Chassis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 mesh = SubResource("BoxMesh_body")
 
-[node name="Stripe" type="MeshInstance3D" parent="."]
+[node name="Stripe" type="MeshInstance3D" parent="Chassis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 mesh = SubResource("BoxMesh_stripe")
 
-[node name="Cabin" type="MeshInstance3D" parent="."]
+[node name="Cabin" type="MeshInstance3D" parent="Chassis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.12, 0.25)
 mesh = SubResource("BoxMesh_cabin")
 
-[node name="Roof" type="MeshInstance3D" parent="."]
+[node name="Roof" type="MeshInstance3D" parent="Chassis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.39, 0.3)
 mesh = SubResource("BoxMesh_roof")
 
-[node name="Spoiler" type="MeshInstance3D" parent="."]
+[node name="Spoiler" type="MeshInstance3D" parent="Chassis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.28, 1.95)
 mesh = SubResource("BoxMesh_spoiler")
+
+[node name="HeadlightLeft" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.68, -2.06)
+mesh = SubResource("BoxMesh_light")
+
+[node name="HeadlightRight" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.68, -2.06)
+mesh = SubResource("BoxMesh_light")
+
+[node name="Antenna" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, 0.45, 1.72, 1.0)
+mesh = SubResource("BoxMesh_antenna")
+
+[node name="FlapLeft" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82, 0.2, 1.72)
+mesh = SubResource("BoxMesh_flap")
+
+[node name="FlapRight" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.82, 0.2, 1.72)
+mesh = SubResource("BoxMesh_flap")
+
+[node name="RoundelLeft" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 0.62, 0.1)
+mesh = SubResource("BoxMesh_roundel")
+
+[node name="RoundelRight" type="MeshInstance3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.62, 0.1)
+mesh = SubResource("BoxMesh_roundel")
+
+[node name="NumberLeft" type="Label3D" parent="Chassis"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -0.915, 0.62, 0.1)
+pixel_size = 0.004
+modulate = Color(0.08, 0.08, 0.09, 1)
+text = "7"
+font = ExtResource("4_font")
+font_size = 110
+outline_size = 0
+
+[node name="NumberRight" type="Label3D" parent="Chassis"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.915, 0.62, 0.1)
+pixel_size = 0.004
+modulate = Color(0.08, 0.08, 0.09, 1)
+text = "7"
+font = ExtResource("4_font")
+font_size = 110
+outline_size = 0
+
+[node name="NumberRoof" type="Label3D" parent="Chassis"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1.425, 0.3)
+pixel_size = 0.006
+modulate = Color(0.08, 0.08, 0.09, 1)
+text = "7"
+font = ExtResource("4_font")
+font_size = 110
+outline_size = 0
 
 [node name="WheelFrontLeft" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -0.82, 0.33, -1.35)
 mesh = SubResource("CylinderMesh_wheel")
 
+[node name="Rim" type="MeshInstance3D" parent="WheelFrontLeft"]
+mesh = SubResource("CylinderMesh_rim")
+
+[node name="Spoke" type="MeshInstance3D" parent="WheelFrontLeft"]
+mesh = SubResource("BoxMesh_spoke")
+
 [node name="WheelFrontRight" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0.82, 0.33, -1.35)
 mesh = SubResource("CylinderMesh_wheel")
+
+[node name="Rim" type="MeshInstance3D" parent="WheelFrontRight"]
+mesh = SubResource("CylinderMesh_rim")
+
+[node name="Spoke" type="MeshInstance3D" parent="WheelFrontRight"]
+mesh = SubResource("BoxMesh_spoke")
 
 [node name="WheelRearLeft" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -0.82, 0.33, 1.35)
 mesh = SubResource("CylinderMesh_wheel")
 
+[node name="Rim" type="MeshInstance3D" parent="WheelRearLeft"]
+mesh = SubResource("CylinderMesh_rim")
+
+[node name="Spoke" type="MeshInstance3D" parent="WheelRearLeft"]
+mesh = SubResource("BoxMesh_spoke")
+
 [node name="WheelRearRight" type="MeshInstance3D" parent="."]
 transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0.82, 0.33, 1.35)
 mesh = SubResource("CylinderMesh_wheel")
 
-[node name="HeadlightLeft" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.68, -2.06)
-mesh = SubResource("BoxMesh_light")
+[node name="Rim" type="MeshInstance3D" parent="WheelRearRight"]
+mesh = SubResource("CylinderMesh_rim")
 
-[node name="HeadlightRight" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.68, -2.06)
-mesh = SubResource("BoxMesh_light")
+[node name="Spoke" type="MeshInstance3D" parent="WheelRearRight"]
+mesh = SubResource("BoxMesh_spoke")
+
+[node name="DustLeft" parent="." instance=ExtResource("3_dust")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82, 0.12, 1.65)
+
+[node name="DustRight" parent="." instance=ExtResource("3_dust")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.82, 0.12, 1.65)
 
 [node name="EngineAudio" type="AudioStreamPlayer3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, -1.4)

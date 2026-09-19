@@ -1,6 +1,7 @@
 ## A rally car that follows the driving line instead of simulating tyres: the speed comes
 ## from a precomputed profile, a driver adds skill and noise, and a visual layer opens and
-## closes the line in corners and slides the body on the dirt.
+## closes the line in corners and slides the body on the dirt. The wheels spin and steer
+## (counter-steering in a slide), the body rolls and pitches, and the rear wheels throw dust.
 class_name RallyCar
 extends AnimatableBody3D
 
@@ -35,6 +36,14 @@ signal finished
 ## The profile ends at 0 m/s at the finish; the car never goes slower than this before it,
 ## or it would creep towards the line forever.
 @export var min_speed := 3.0
+## Body roll (rad) per g of lateral acceleration and pitch (rad) per m/s² of acceleration.
+@export var roll_per_g := 0.06
+@export var pitch_per_accel := 0.012
+## Above this speed (m/s) the rear wheels throw dust.
+@export var dust_speed := 5.0
+
+const WHEEL_RADIUS := 0.33
+const WHEELBASE := 2.7
 
 var profile: SpeedProfile = null
 var distance := 0.0
@@ -48,12 +57,27 @@ var _curve_to_world := Transform3D.IDENTITY
 var _lateral := 0.0
 var _drift := 0.0
 var _noise := FastNoiseLite.new()
+var _wheel_spin := 0.0
+var _steer := 0.0
+var _roll := 0.0
+var _pitch := 0.0
+var _previous_speed := 0.0
+var _wheel_bases: Array[Transform3D] = []
 
 @onready var _shape := $CollisionShape3D as CollisionShape3D
+@onready var chassis := $Chassis as Node3D
+## Front left, front right, rear left, rear right.
+@onready var wheels: Array[Node3D] = [$WheelFrontLeft as Node3D, $WheelFrontRight as Node3D,
+		$WheelRearLeft as Node3D, $WheelRearRight as Node3D]
+@onready var dust: Array[GPUParticles3D] = [$DustLeft as GPUParticles3D, $DustRight as GPUParticles3D]
 
 
 func _ready() -> void:
 	sync_to_physics = true
+	for wheel in wheels:
+		_wheel_bases.append(wheel.transform)
+	for label: Label3D in [$Chassis/NumberLeft, $Chassis/NumberRight, $Chassis/NumberRoof]:
+		label.text = str(car_number)
 	_noise.seed = noise_seed
 	_noise.frequency = 0.01
 
@@ -68,6 +92,7 @@ func setup(curve: Curve3D, curve_to_world := Transform3D.IDENTITY) -> void:
 	running = false
 	has_finished = false
 	_place(0.0)
+	_set_dust(false)
 
 
 func start() -> void:
@@ -112,9 +137,43 @@ func _physics_process(delta: float) -> void:
 		speed = 0.0
 		running = false
 		has_finished = true
+		_set_dust(false)
 		finished.emit()
 		EventBus.car_finished.emit(self)
 	_place(delta)
+	_animate(delta)
+
+
+## Wheels, body and dust for the current speed and corner.
+func _animate(delta: float) -> void:
+	_wheel_spin = fmod(_wheel_spin - speed * delta / WHEEL_RADIUS, TAU)
+	var curvature := profile.curvature_at(distance)
+	# Steer into the corner, and against the slide (the rear stepping out).
+	var target_steer := clampf(atan(curvature * WHEELBASE) - _drift * 0.8, -0.45, 0.45)
+	_steer = lerpf(_steer, target_steer, 1.0 - exp(-8.0 * delta))
+	for i in wheels.size():
+		var base := _wheel_bases[i]
+		var steer := _steer if i < 2 else 0.0
+		# The wheel mesh turns about its own Y axis (the axle).
+		wheels[i].transform = Transform3D(Basis(Vector3.UP, steer) * base.basis * Basis(Vector3.UP, _wheel_spin),
+				base.origin)
+	var lateral_g := speed * speed * curvature / 9.81
+	var acceleration := (speed - _previous_speed) / maxf(delta, 0.001)
+	_previous_speed = speed
+	var weight := 1.0 - exp(-4.0 * delta)
+	# The body leans out of the corner, squats when accelerating and dives when braking.
+	_roll = lerpf(_roll, clampf(-lateral_g * roll_per_g, -0.08, 0.08), weight)
+	_pitch = lerpf(_pitch, clampf(acceleration * pitch_per_accel, -0.05, 0.05), weight)
+	chassis.rotation = Vector3(_pitch, 0.0, _roll)
+	_set_dust(speed > dust_speed)
+	for emitter in dust:
+		emitter.amount_ratio = clampf(speed / 30.0, 0.25, 1.0)
+
+
+func _set_dust(on: bool) -> void:
+	for emitter in dust:
+		if emitter.emitting != on:
+			emitter.emitting = on
 
 
 func _place(delta: float) -> void:

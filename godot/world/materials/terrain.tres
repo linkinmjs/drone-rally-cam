@@ -1,7 +1,9 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
 
 [ext_resource type="Shader" path="res://world/materials/terrain.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://world/materials/noise_macro.tres" id="2_noise"]
 
 [resource]
 render_priority = 0
 shader = ExtResource("1_shader")
+shader_parameter/macro_noise = ExtResource("2_noise")

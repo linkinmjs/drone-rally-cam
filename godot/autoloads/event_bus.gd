@@ -7,6 +7,10 @@ extends Node
 
 # Player and drone handling
 signal control_state_changed(state: int)
+## A footstep of the player on `surface` (&"gravel" on the road, &"grass" elsewhere).
+signal player_step(surface: StringName)
+signal case_opened(position: Vector3)
+signal case_closed(position: Vector3)
 signal drone_deployed(drone: Drone)
 signal drone_recovered(drone: Drone)
 signal drone_crashed(drone: Drone, speed: float)

@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://ui/drone_visor.tscn" id="9_visor"]
 [ext_resource type="PackedScene" path="res://ui/clip_summary.tscn" id="10_summary"]
 [ext_resource type="Script" path="res://ui/tablet.gd" id="11_tablet"]
+[ext_resource type="Script" path="res://game/stage_feedback.gd" id="12_feedback"]
 
 [node name="Stage" type="Node3D"]
 script = ExtResource("1_stage")
@@ -35,6 +36,9 @@ player_path = NodePath("../Player")
 drone_path = NodePath("../RallyDrone")
 radio_path = NodePath("../RadioController")
 recorder_path = NodePath("../Recorder")
+
+[node name="StageFeedback" type="Node" parent="."]
+script = ExtResource("12_feedback")
 
 [node name="UI" type="CanvasLayer" parent="."]
 

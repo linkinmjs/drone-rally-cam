@@ -39,7 +39,7 @@ func _ready() -> void:
 	_drone = get_parent() as Node3D
 	top_level = true
 	tilt = deg_to_rad(start_tilt_deg)
-	camera.cull_mask &= ~DRONE_BODY_LAYER
+	camera.cull_mask &= ~(DRONE_BODY_LAYER | Player.VIEW_MODEL_LAYER)
 	_hide_drone_body(_drone)
 	snap()
 

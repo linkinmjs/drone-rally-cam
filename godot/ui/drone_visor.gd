@@ -22,6 +22,7 @@ const HINT_BOTTOM := 16.0
 const TOP_CENTER_W := 880.0
 const ASSIST_H := 150.0
 const REC_DOT := 16.0
+const CAMERA_LOOK := preload("res://ui/post/camera_look.gdshader")
 
 var drone: Drone = null
 var recorder: Recorder = null
@@ -57,6 +58,8 @@ var _radio_countdown: Label
 var _battery_label: Label
 var _battery_bar: ScoreBar
 var _thirds: Control
+## Vignette and grain of the drone cameras, under everything else.
+var _look: ColorRect
 var _show_thirds := true
 var _border: Array[ColorRect] = []
 var _blink_rec := 0.0
@@ -69,6 +72,15 @@ func _ready() -> void:
 	# With offsets: created by code inside the preview's SubViewport, it has no size yet.
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_look = ColorRect.new()
+	_look.name = "CameraLook"
+	_look.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_look.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var look_material := ShaderMaterial.new()
+	look_material.shader = CAMERA_LOOK
+	_look.material = look_material
+	add_child(_look)
 
 	hud = HUD.new()
 	hud.name = "HUD"
@@ -487,6 +499,7 @@ func _rebuild_hint() -> void:
 ## other few seconds, sample radio and guide.
 func setup_preview() -> void:
 	preview_mode = true
+	_look.visible = false
 	hud.preview_mode = true
 	hud.mode_badge.set_mode("HUD_MODE_STABILIZED")
 	hud.status._on_armed(null)

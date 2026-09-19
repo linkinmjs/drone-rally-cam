@@ -7,7 +7,7 @@ extends Camera3D
 
 
 func _ready() -> void:
-	cull_mask &= ~Gimbal.DRONE_BODY_LAYER
+	cull_mask &= ~(Gimbal.DRONE_BODY_LAYER | Player.VIEW_MODEL_LAYER)
 	keep_aspect = Camera3D.KEEP_WIDTH
 	var _discard := QuadSettings.settings_updated.connect(apply_quad_settings)
 	apply_quad_settings()

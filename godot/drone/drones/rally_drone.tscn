@@ -10,6 +10,31 @@
 [sub_resource type="SphereShape3D" id="SphereShape3D_pickup"]
 radius = 0.4
 
+[sub_resource type="StandardMaterial3D" id="Material_gimbal"]
+albedo_color = Color(0.1, 0.1, 0.11, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Material_lens"]
+albedo_color = Color(0.03, 0.04, 0.06, 1)
+metallic = 0.5
+roughness = 0.1
+
+[sub_resource type="BoxMesh" id="BoxMesh_gimbal"]
+material = SubResource("Material_gimbal")
+size = Vector3(0.04, 0.036, 0.04)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lens"]
+material = SubResource("Material_lens")
+top_radius = 0.011
+bottom_radius = 0.012
+height = 0.012
+radial_segments = 12
+rings = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_yoke"]
+material = SubResource("Material_gimbal")
+size = Vector3(0.05, 0.006, 0.02)
+
 [node name="RallyDrone" instance=ExtResource("1_base")]
 collision_layer = 2
 collision_mask = 5
@@ -20,6 +45,21 @@ max_contacts_reported = 4
 
 [node name="Gimbal" type="Node3D" parent="."]
 script = ExtResource("3_gimbal")
+
+[node name="Housing" type="MeshInstance3D" parent="Gimbal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.012)
+layers = 2
+mesh = SubResource("BoxMesh_gimbal")
+
+[node name="Lens" type="MeshInstance3D" parent="Gimbal"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, -0.012)
+layers = 2
+mesh = SubResource("CylinderMesh_lens")
+
+[node name="Yoke" type="MeshInstance3D" parent="Gimbal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.024, 0.012)
+layers = 2
+mesh = SubResource("BoxMesh_yoke")
 
 [node name="Camera3D" type="Camera3D" parent="Gimbal"]
 fov = 70.0
